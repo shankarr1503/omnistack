@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+*.tgz
+.env
+.env.*
+!.env.example
+/config.yaml
+state/
+metrics/
+cache/
+logs/
+generated/
+runtime/
+*.tsbuildinfo

@@ -1,0 +1,59 @@
+{
+  "name": "omnistack",
+  "version": "0.1.0",
+  "description": "A universal multi-model engineering layer for coding agents",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "bin": {
+    "omni": "dist/cli/index.js"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "templates",
+    "docs",
+    "setup",
+    "setup.cmd",
+    "examples",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "lint": "eslint src tests",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "prepack": "npm run build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "eslint": "^10.11.0",
+    "prettier": "^3.9.8",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.42.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shankarr1503/omnistack.git"
+  },
+  "homepage": "https://github.com/shankarr1503/omnistack#readme",
+  "bugs": {
+    "url": "https://github.com/shankarr1503/omnistack/issues"
+  }
+}
