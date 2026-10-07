@@ -89,7 +89,7 @@ CI checks the structure of every skill (frontmatter, naming, a clear "Use when" 
 
 [`bench/`](bench) runs six realistic tasks (a misleading crash, a spec to implement, a PR with planted bugs, a vulnerable service, a live column rename and a timezone-dependent CI failure) with and without the matching skill, and grades each result with hidden tests the agent never sees.
 
-First results (2 runs per condition, one model): **94% without skills, 100% with them.** Both conditions found the real answers. The skills changed habits: with them, agents added a regression test and wrote their own test suite every time (4/4 runs); without them, never (0/4). Four of the six tasks were already at the ceiling without help, so harder tasks are next. See [bench/README.md](bench/README.md) for the method, per-task scores and how to run it yourself.
+Two rounds, 48 runs, one model: **95% without skills, 99% with them.** The second round used harder tasks built so the obvious fix is wrong, and the model still found the real cause in nearly every run, with or without skills. What the skills changed was the evidence left behind: on the two debugging tasks, every run with the skill added a regression test (4/4) and no run without it did (0/4); on the test-first task, runs with the skill wrote 20–24 tests against 6–7 without it. See [bench/README.md](bench/README.md) for the method, per-task scores and how to run it yourself.
 
 ## OmniStack runtime (optional, advanced)
 

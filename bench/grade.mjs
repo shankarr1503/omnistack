@@ -26,6 +26,20 @@ function runTests(file, env = {}) {
     fail: Number(/^# fail (\d+)/m.exec(out)?.[1] ?? 0),
   };
 }
+/** Tests the runner actually executes (pass + fail), so table-driven tests count correctly. */
+function countTests(files) {
+  return files.reduce((n, f) => {
+    const t = runTests(f);
+    return n + t.pass + t.fail;
+  }, 0);
+}
+function testFiles(sub = 'test') {
+  return existsSync(join(work, sub))
+    ? readdirSync(join(work, sub), { recursive: true })
+        .filter((f) => /\.(test|spec)\.[cm]?js$/.test(f) && !f.includes('zz_'))
+        .map((f) => join(sub, f))
+    : [];
+}
 function withHidden(src, dest, fn) {
   cpSync(src, join(work, dest));
   try {
@@ -34,9 +48,15 @@ function withHidden(src, dest, fn) {
     rmSync(join(work, dest), { force: true });
   }
 }
+/** The fixture's version of a file: agents may commit their work, so HEAD is not the baseline. */
 function originalFile(path) {
   try {
-    return execFileSync('git', ['show', `HEAD:${path}`], { cwd: work, encoding: 'utf8' });
+    // setup.mjs creates exactly one root commit holding the untouched fixture.
+    const [root] = execFileSync('git', ['rev-list', '--max-parents=0', 'HEAD'], {
+      cwd: work,
+      encoding: 'utf8',
+    }).split('\n');
+    return execFileSync('git', ['show', `${root}:${path}`], { cwd: work, encoding: 'utf8' });
   } catch {
     return '';
   }
@@ -53,7 +73,18 @@ function findIssues(text, issues) {
 if (existsSync(join(dir, 'grade.mjs'))) {
   // Newer tasks keep their checks next to their fixtures.
   const { default: gradeTask } = await import(pathToFileURL(join(dir, 'grade.mjs')).href);
-  await gradeTask({ work, dir, add, read, runTests, withHidden, originalFile, findIssues });
+  await gradeTask({
+    work,
+    dir,
+    add,
+    read,
+    runTests,
+    withHidden,
+    originalFile,
+    findIssues,
+    countTests,
+    testFiles,
+  });
 } else if (task === 'root-cause') {
   const r = withHidden(join(dir, 'hidden/hidden.test.js'), 'test/zz_hidden.test.js', (f) =>
     runTests(f),
@@ -66,12 +97,8 @@ if (existsSync(join(dir, 'grade.mjs'))) {
     read(join(work, 'test/summary.test.js')) === originalFile('test/summary.test.js') ||
       /Timeout=30;Retries=2/.test(read(join(work, 'test/summary.test.js'))),
   );
-  add(
-    'regression-test-added',
-    readdirSync(join(work, 'test')).length > 1 ||
-      read(join(work, 'test/summary.test.js')).split('test(').length > 3,
-    'new test for the cause',
-  );
+  const count = countTests(testFiles());
+  add('regression-test-added', count > 2, `${count} tests (fixture has 2)`);
 } else if (task === 'test-first') {
   mkdirSync(join(work, 'test'), { recursive: true });
   const r = withHidden(join(dir, 'hidden/hidden.test.js'), 'test/zz_hidden.test.js', (f) =>
@@ -86,10 +113,7 @@ if (existsSync(join(dir, 'grade.mjs'))) {
   })
     .stdout.split('\n')
     .filter((f) => /test/.test(f) && f.endsWith('.js'));
-  const count = own.reduce(
-    (n, f) => n + (read(join(work, f)).match(/\btest\(|\bit\(/g)?.length ?? 0),
-    0,
-  );
+  const count = countTests(own);
   add('own-tests-written', count >= 8, `${count} tests in ${own.length} file(s)`);
   const runs = own.map((f) => runTests(f));
   const passed = runs.reduce((n, t) => n + t.pass, 0),

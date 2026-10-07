@@ -1,6 +1,5 @@
 import { join } from 'node:path';
-import { readdirSync } from 'node:fs';
-export default ({ work, dir, add, read, runTests, withHidden }) => {
+export default ({ work, dir, add, read, runTests, withHidden, countTests, testFiles }) => {
   const h = withHidden(join(dir, 'hidden/hidden.test.js'), 'test/zz_hidden.test.js', (f) =>
     runTests(f),
   );
@@ -8,10 +7,6 @@ export default ({ work, dir, add, read, runTests, withHidden }) => {
   const v = runTests('test/dashboard.test.js');
   add('visible-tests', v.fail === 0 && v.pass > 0, `${v.pass} passed, ${v.fail} failed`);
   add('test-not-weakened', read(join(work, 'test/dashboard.test.js')).includes("['ana', 'bo']"));
-  const tests = readdirSync(join(work, 'test')).filter((f) => f.endsWith('.js'));
-  const count = tests.reduce(
-    (n, f) => n + (read(join(work, 'test', f)).match(/\btest\(/g)?.length ?? 0),
-    0,
-  );
-  add('regression-test-added', count > 2, `${count} tests`);
+  const count = countTests(testFiles());
+  add('regression-test-added', count > 2, `${count} tests (fixture has 2)`);
 };

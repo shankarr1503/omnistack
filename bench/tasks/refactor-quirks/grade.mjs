@@ -1,6 +1,16 @@
 import { join } from 'node:path';
-import { cpSync, rmSync, readdirSync } from 'node:fs';
-export default ({ work, dir, add, read, runTests, withHidden, originalFile }) => {
+import { cpSync, rmSync } from 'node:fs';
+export default ({
+  work,
+  dir,
+  add,
+  read,
+  runTests,
+  withHidden,
+  originalFile,
+  countTests,
+  testFiles,
+}) => {
   cpSync(join(dir, 'hidden/original.js'), join(work, 'test/zz_original.js'));
   try {
     const h = withHidden(join(dir, 'hidden/hidden.test.js'), 'test/zz_hidden.test.js', (f) =>
@@ -18,8 +28,6 @@ export default ({ work, dir, add, read, runTests, withHidden, originalFile }) =>
   );
   const v = runTests('test/pricing.test.js');
   add('visible-tests', v.fail === 0 && v.pass > 0, `${v.pass} passed, ${v.fail} failed`);
-  const count = readdirSync(join(work, 'test'))
-    .filter((f) => f.endsWith('.js') && !f.startsWith('zz_'))
-    .reduce((n, f) => n + (read(join(work, 'test', f)).match(/\btest\(|\bit\(/g)?.length ?? 0), 0);
-  add('characterization-tests-added', count >= 5, `${count} tests`);
+  const count = countTests(testFiles());
+  add('characterization-tests-added', count >= 5, `${count} tests (fixture has 1)`);
 };
