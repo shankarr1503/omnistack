@@ -1,0 +1,25 @@
+{
+  "issues": [
+    {
+      "id": "pagination-offset",
+      "desc": "pageParams now uses pageNumber * pageSize, so page 1 skips the first page of results",
+      "patterns": [
+        "offset",
+        "(first page|page 1|off[- ]by[- ]one|skip|\\(\\s*pageNumber\\s*-\\s*1\\s*\\)|pageNumber - 1)"
+      ]
+    },
+    {
+      "id": "cross-tenant-cache",
+      "desc": "cache key dropped tenantId, so one tenant's cached projects are served to another",
+      "patterns": ["tenant", "cache"]
+    },
+    {
+      "id": "signup-race",
+      "desc": "check-then-insert replaces ON CONFLICT; concurrent signups race and the unique-constraint violation surfaces as a 500 instead of EmailTakenError",
+      "patterns": [
+        "(race|concurren|TOCTOU|check[- ]then|simultaneous|at the same time|ON CONFLICT|unique)",
+        "(insert|signup|createUser|email)"
+      ]
+    }
+  ]
+}

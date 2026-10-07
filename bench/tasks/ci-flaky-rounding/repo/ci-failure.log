@@ -1,0 +1,15 @@
+2024-05-02T08:11:40.3Z > split-bill@ test
+2024-05-02T08:11:40.3Z > node --test
+2024-05-02T08:11:40.6Z # Subtest: shares add up to the total
+2024-05-02T08:11:40.6Z not ok 1 - shares add up to the total
+2024-05-02T08:11:40.6Z   error: |-
+2024-05-02T08:11:40.6Z     Expected values to be strictly equal:
+2024-05-02T08:11:40.6Z     4813 !== 4814
+2024-05-02T08:11:40.6Z   location: 'test/split.test.js:5:1'
+2024-05-02T08:11:40.6Z # Subtest: even split
+2024-05-02T08:11:40.6Z ok 2 - even split
+2024-05-02T08:11:40.7Z # tests 2
+2024-05-02T08:11:40.7Z # pass 1
+2024-05-02T08:11:40.7Z # fail 1
+2024-05-02T08:11:40.8Z ##[error]Process completed with exit code 1.
+(Re-running the job passed.)

@@ -1,0 +1,1 @@
+`src/pricing.js` is really hard to read. Please refactor `calculateTotal` so it's clean and maintainable (modern JavaScript, small well-named helpers). Behavior must not change: several services depend on these exact numbers.

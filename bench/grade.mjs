@@ -4,6 +4,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const [task, workdirArg] = process.argv.slice(2);
 const dir = resolve(import.meta.dirname, 'tasks', task);
@@ -49,7 +50,11 @@ function findIssues(text, issues) {
   }
 }
 
-if (task === 'root-cause') {
+if (existsSync(join(dir, 'grade.mjs'))) {
+  // Newer tasks keep their checks next to their fixtures.
+  const { default: gradeTask } = await import(pathToFileURL(join(dir, 'grade.mjs')).href);
+  await gradeTask({ work, dir, add, read, runTests, withHidden, originalFile, findIssues });
+} else if (task === 'root-cause') {
   const r = withHidden(join(dir, 'hidden/hidden.test.js'), 'test/zz_hidden.test.js', (f) =>
     runTests(f),
   );
