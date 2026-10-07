@@ -115,3 +115,66 @@ test('test workflow runs without models and reports actual exit status', async (
   })) as { status: string };
   assert.equal(failed.status, 'needs-attention');
 });
+test('edit_file keeps dollar sequences in replacement text literal', async () => {
+  const root = await temp(),
+    home = await temp();
+  await execute('git', ['init', '-q'], root);
+  await writeFile(join(root, 'run.sh'), 'echo OLD\n');
+  const repo = await scanRepository(root);
+  const tools = new ToolController(repo, home, {
+    write: true,
+    commands: false,
+    approvalMode: 'balanced',
+  });
+  await tools.call({
+    id: '1',
+    name: 'edit_file',
+    arguments: { path: 'run.sh', oldText: 'echo OLD', newText: 'echo "$$HOME $& $1"' },
+  });
+  assert.equal(await readFile(join(root, 'run.sh'), 'utf8'), 'echo "$$HOME $& $1"\n');
+});
+test('review diff covers every changed file, not the first files in the repository', async () => {
+  const root = await temp(),
+    home = await temp();
+  await execute('git', ['init', '-q'], root);
+  for (let i = 0; i < 150; i++)
+    await writeFile(join(root, `f${String(i).padStart(3, '0')}.txt`), 'x\n');
+  await writeFile(join(root, 'zz-last.txt'), 'before\n');
+  await execute('git', ['add', '.'], root);
+  await execute(
+    'git',
+    ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init'],
+    root,
+  );
+  const repo = await scanRepository(root);
+  const tools = new ToolController(repo, home, {
+    write: true,
+    commands: false,
+    approvalMode: 'balanced',
+  });
+  await writeFile(join(root, 'zz-last.txt'), 'after\n');
+  await tools.call({
+    id: '1',
+    name: 'write_file',
+    arguments: { path: './nested/../created.ts', content: 'export {};\n', expectedHash: null },
+  });
+  const diff = await tools.filteredDiff();
+  assert.match(diff, /zz-last\.txt/);
+  assert.match(diff, /\+after/);
+  assert.match(diff, /created\.ts\nexport \{\};/);
+  assert.ok(repo.files.includes('created.ts'));
+  assert.doesNotMatch(diff, /f000\.txt/);
+});
+test('common credential files are outside repository tool scope', async () => {
+  const { sensitive } = await import('../src/repository/boundary.js');
+  for (const path of [
+    '.netrc',
+    '.npmrc',
+    'sub/.pypirc',
+    '.docker/config.json',
+    'prod.tfvars',
+    '.kube/config',
+  ])
+    assert.ok(sensitive(path), path);
+  assert.ok(!sensitive('src/netrc.ts'));
+});

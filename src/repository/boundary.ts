@@ -6,7 +6,7 @@ export function inside(root: string, path: string): boolean {
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
 }
 export function sensitive(path: string): boolean {
-  return /(^|[/\\])(?:\.git|\.ssh|\.aws|\.azure|\.gnupg|node_modules)([/\\]|$)|(^|[/\\])(?:\.env(?:\..*)?|credentials(?:\..*)?|id_rsa|id_ed25519|.*\.(?:pem|key|p12))$/i.test(
+  return /(^|[/\\])(?:\.git|\.ssh|\.aws|\.azure|\.gnupg|\.kube|node_modules)([/\\]|$)|(^|[/\\])(?:\.env(?:\..*)?|credentials(?:\..*)?|id_rsa|id_ed25519|\.netrc|_netrc|\.npmrc|\.pypirc|\.pgpass|\.htpasswd|\.docker[/\\]config\.json|.*\.(?:pem|key|p12|pfx|jks|keystore|tfvars|tfstate))$/i.test(
     path,
   );
 }

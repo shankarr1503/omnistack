@@ -16,6 +16,8 @@ All destructive shell commands are denied by the model tool surface. There is no
 
 `--allow-commands` authorizes execution of supported repository checks. Tests, compiler plugins and lint configuration can execute arbitrary code. An allowlist **does not sandbox that code**. The child environment omits API-key variables, but scripts still run as the developer and may access their filesystem. For hostile repositories use an OS/container sandbox with restricted credentials and network access. Do not infer safety from a command being named `test`.
 
+**Combining `--allow-write` with `--allow-commands` lets the model run code it wrote.** The model can edit a test file, `package.json` script, `conftest.py` or build script, then run the allowlisted check that executes it. The command allowlist limits which commands can be named; it does not limit what code they run. Repository text can steer the model through prompt injection, so only grant both flags together on repositories you trust, or inside a container/VM.
+
 Timeouts are bounded but complete descendant-process termination is not guaranteed on every OS. Filesystem preflight and optimistic hashes reduce accidental overwrite; they are not a defense against an adversary racing filesystem changes with the same OS privileges.
 
 ## Secrets, privacy and persistence

@@ -97,8 +97,9 @@ export class ToolController {
       JSON.stringify({ root: this.repo.root, entries: this.journal }),
     );
     await atomicWrite(await this.path(requested, true), content);
-    if (!this.repo.files.includes(requested)) this.repo.files.push(requested);
-    return { path: requested, hash: contentHash(content), changed: true };
+    const rel = relative(this.repo.root, path).replace(/\\/g, '/');
+    if (!this.repo.files.includes(rel)) this.repo.files.push(rel);
+    return { path: rel, hash: contentHash(content), changed: true };
   }
   async call(call: UnifiedToolCall): Promise<unknown> {
     this.signal?.throwIfAborted();
@@ -117,7 +118,12 @@ export class ToolController {
           text = await this.read(a.path);
         if (text.split(a.oldText).length !== 2)
           throw new PermissionDeniedError('Edit must match exactly once');
-        return this.write(a.path, text.replace(a.oldText, a.newText), contentHash(text));
+        // A replacer function keeps `$&`, `$$` and similar sequences in newText literal.
+        return this.write(
+          a.path,
+          text.replace(a.oldText, () => a.newText),
+          contentHash(text),
+        );
       }
       case 'list_directory': {
         const a = schemas.list_directory.parse(call.arguments);
@@ -161,31 +167,49 @@ export class ToolController {
         throw new PermissionDeniedError('Unknown tool: ' + call.name);
     }
   }
+  /** Changed paths from Git plus this run's journal; never the whole repository. */
+  private async changedFiles(): Promise<{ path: string; untracked: boolean }[]> {
+    const changed = new Map<string, boolean>();
+    const fields = (
+      await git(this.repo.root, ['status', '--porcelain=v1', '-z', '--untracked-files=all'])
+    ).split('\0');
+    for (let i = 0; i < fields.length; i++) {
+      const entry = fields[i]!;
+      if (entry.length < 4) continue;
+      changed.set(entry.slice(3), entry.startsWith('??'));
+      // Renames and copies are followed by their source path.
+      if (/^[RC]|^.[RC]/.test(entry)) i++;
+    }
+    for (const entry of this.journal) {
+      const path = entry.path.replace(/\\/g, '/');
+      if (!changed.has(path)) changed.set(path, true);
+    }
+    return [...changed].map(([path, untracked]) => ({ path, untracked }));
+  }
   async filteredDiff(): Promise<string> {
-    const allowed: string[] = [];
-    for (const file of this.repo.files) {
+    const chunks: string[] = [];
+    // Per-file reads also cover untracked files; no raw repository-wide diff reaches a model.
+    for (const { path: file, untracked } of (await this.changedFiles()).slice(0, 200)) {
       try {
         await this.path(file);
-        allowed.push(file);
       } catch {
-        /* Privacy and boundary exclusions. */
+        continue; // Privacy and boundary exclusions.
       }
-    }
-    if (!allowed.length) return '';
-    // Per-file reads also cover untracked files; no raw repository-wide diff reaches a model.
-    const chunks: string[] = [];
-    for (const file of allowed.slice(0, 100)) {
-      const diff = await git(this.repo.root, [
-        'diff',
-        '--no-ext-diff',
-        '--no-textconv',
-        'HEAD',
-        '--',
-        file,
-      ]).catch(() => git(this.repo.root, ['diff', '--no-ext-diff', '--no-textconv', '--', file]));
+      const diff = untracked
+        ? ''
+        : await git(this.repo.root, [
+            'diff',
+            '--no-ext-diff',
+            '--no-textconv',
+            'HEAD',
+            '--',
+            file,
+          ]).catch(() => '');
       if (diff) chunks.push(diff);
-      else if (this.journal.some((e) => e.path.replace(/\\/g, '/') === file.replace(/\\/g, '/')))
-        chunks.push('Current file: ' + file + '\n' + (await this.read(file)));
+      else
+        await this.read(file)
+          .then((text) => chunks.push('New or untracked file: ' + file + '\n' + text))
+          .catch(() => undefined);
     }
     return redact(chunks.join('\n').slice(0, 100000));
   }
