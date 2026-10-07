@@ -86,10 +86,14 @@ if (task === 'root-cause') {
     0,
   );
   add('own-tests-written', count >= 8, `${count} tests in ${own.length} file(s)`);
-  if (own.length) {
-    const t = runTests(own[0]);
-    add('own-tests-pass', t.fail === 0 && t.pass > 0, `${t.pass} passed, ${t.fail} failed`);
-  } else add('own-tests-pass', false, 'no test file');
+  const runs = own.map((f) => runTests(f));
+  const passed = runs.reduce((n, t) => n + t.pass, 0),
+    failed = runs.reduce((n, t) => n + t.fail, 0);
+  add(
+    'own-tests-pass',
+    runs.length > 0 && runs.every((t) => t.fail === 0 && t.pass > 0),
+    runs.length ? `${passed} passed, ${failed} failed` : 'no test file',
+  );
 } else if (task === 'ship-review' || task === 'threat-check') {
   const report = read(join(work, 'REPORT.md'));
   add('report-written', report.length > 200);
@@ -104,15 +108,31 @@ if (task === 'root-cause') {
     );
 } else if (task === 'safe-migration') {
   // Recursive: some plans keep later contract steps in a subfolder (e.g. migrations/deferred/).
-  const migrations = readdirSync(join(work, 'migrations'), { recursive: true, withFileTypes: true })
-    .filter((e) => e.isFile() && e.name !== '0001_create_users.sql')
-    .map((e) => read(join(e.parentPath, e.name)))
-    .join('\n');
-  const all = [
-    migrations,
-    read(join(work, 'MIGRATION_PLAN.md')),
-    read(join(work, 'REPORT.md')),
-  ].join('\n');
+  const files = (sub, ext = /./) =>
+    existsSync(join(work, sub))
+      ? readdirSync(join(work, sub), { recursive: true, withFileTypes: true })
+          .filter(
+            (e) =>
+              e.isFile() &&
+              ext.test(e.name) &&
+              e.name !== '0001_create_users.sql' &&
+              !/(^|[/\\])\.(git|pgtest)([/\\]|$)|node_modules/.test(e.parentPath),
+          )
+          .map((e) => read(join(e.parentPath, e.name)))
+      : [];
+  const migrationFiles = files('migrations');
+  const migrations = migrationFiles.join('\n');
+  // Plans, deferred/rollback SQL outside migrations/, and application code (dual
+  // writes often live there) all count as evidence for the plan-level checks.
+  // Only files the agent created or changed count, so fixture text cannot satisfy a check.
+  const touched = execFileSync(
+    'git',
+    ['ls-files', '--modified', '--others', '--exclude-standard', '-z'],
+    { cwd: work, encoding: 'utf8' },
+  )
+    .split('\0')
+    .filter((f) => /\.(sql|md|py)$/.test(f) && !/(^|\/)\.pgtest\//.test(f));
+  const all = [migrations, ...touched.map((f) => read(join(work, f)))].join('\n');
   for (const c of JSON.parse(read(join(dir, 'expected.json'))).checks) {
     const re = new RegExp(c.pattern, 'i');
     const pass =
@@ -120,7 +140,11 @@ if (task === 'root-cause') {
         ? migrations.length > 0 && !re.test(migrations)
         : c.type === 'present_in_migrations'
           ? re.test(migrations)
-          : re.test(all);
+          : c.type === 'deferred'
+            ? // Planned somewhere, but never in the same migration file as the expand step.
+              re.test(all) &&
+              !migrationFiles.some((f) => re.test(f) && new RegExp(c.expandPattern, 'i').test(f))
+            : re.test(all);
     add(c.id, pass, c.desc);
   }
 } else if (task === 'fix-ci') {

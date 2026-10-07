@@ -85,6 +85,12 @@ Every skill in this repository must:
 
 CI checks the structure of every skill (frontmatter, naming, a clear "Use when" trigger, length, no runtime dependency, and no broken cross-references). See [CONTRIBUTING.md](CONTRIBUTING.md) to propose a new skill; [`skill-forge`](library/skills/skill-forge/SKILL.md) will help you write it.
 
+## Measured, not just claimed
+
+[`bench/`](bench) runs six realistic tasks (a misleading crash, a spec to implement, a PR with planted bugs, a vulnerable service, a live column rename and a timezone-dependent CI failure) with and without the matching skill, and grades each result with hidden tests the agent never sees.
+
+First results (2 runs per condition, one model): **94% without skills, 100% with them.** Both conditions found the real answers. The skills changed habits: with them, agents added a regression test and wrote their own test suite every time (4/4 runs); without them, never (0/4). Four of the six tasks were already at the ceiling without help, so harder tasks are next. See [bench/README.md](bench/README.md) for the method, per-task scores and how to run it yourself.
+
 ## OmniStack runtime (optional, advanced)
 
 The skills above need nothing else. OmniStack also ships a multi-model runtime that coordinates planning, implementation and review across models you configure. It needs Node.js 22+ and your own model provider.
