@@ -1,7 +1,7 @@
 {
   "name": "omnistack",
   "version": "0.1.0",
-  "description": "A universal multi-model engineering layer for coding agents",
+  "description": "Zero-setup engineering skills for coding agents, plus a multi-model engineering runtime",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -23,7 +23,10 @@
     "examples",
     "SECURITY.md",
     "CONTRIBUTING.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "library",
+    ".claude-plugin",
+    "install.sh"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -55,5 +58,16 @@
   "homepage": "https://github.com/shankarr1503/omnistack#readme",
   "bugs": {
     "url": "https://github.com/shankarr1503/omnistack/issues"
-  }
+  },
+  "keywords": [
+    "claude-code",
+    "codex",
+    "opencode",
+    "agent-skills",
+    "skills",
+    "ai-coding",
+    "code-review",
+    "debugging",
+    "tdd"
+  ]
 }

@@ -1,0 +1,20 @@
+{
+  "name": "omnistack",
+  "owner": {
+    "name": "shankarr1503",
+    "url": "https://github.com/shankarr1503"
+  },
+  "metadata": {
+    "description": "Zero-setup engineering skills for coding agents"
+  },
+  "plugins": [
+    {
+      "name": "omni",
+      "source": "./library",
+      "description": "16 engineering skills: root-cause debugging, test-first, verification, planning, pre-merge review, security, refactoring, CI fixes, performance, migrations and more.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["skills", "debugging", "testing", "code-review", "security", "refactoring"]
+    }
+  ]
+}

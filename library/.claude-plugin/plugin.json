@@ -1,0 +1,12 @@
+{
+  "name": "omni",
+  "description": "Zero-setup engineering skills for coding agents: debug, test, verify, plan, review, secure, refactor and ship.",
+  "version": "1.0.0",
+  "author": {
+    "name": "shankarr1503",
+    "url": "https://github.com/shankarr1503"
+  },
+  "homepage": "https://github.com/shankarr1503/omnistack",
+  "repository": "https://github.com/shankarr1503/omnistack",
+  "license": "MIT"
+}
