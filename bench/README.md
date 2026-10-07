@@ -17,7 +17,7 @@ Every grader was checked against three inputs before any agent ran: the untouche
 
 ## Results
 
-12 runs without the skill and 12 with it: 6 tasks, 2 runs each. All runs used the same model with the same prompt; "with skill" runs were told to read the matching `SKILL.md` first.
+12 runs without the skill and 12 with it: 6 tasks, 2 runs each. All runs used the same model with the same prompt; "with skill" runs were told to read the matching `SKILL.md` first. One run (`safe-migration`, with skill) was cut off by a usage limit and re-run from a fresh copy; the partial attempt was discarded.
 
 | Task           | Without skill | With skill | What differed                                                                                   |
 | -------------- | ------------- | ---------- | ----------------------------------------------------------------------------------------------- |
