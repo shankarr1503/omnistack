@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, writeFile, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadConfig } from '../src/config/loader.js';
@@ -16,7 +16,8 @@ import { ModelRegistry } from '../src/registry/model-registry.js';
 import { MockProvider } from '../src/providers/mock.js';
 import { redact } from '../src/utils/io.js';
 async function temporary(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'omni-test-'));
+  // The runtime canonicalizes roots; macOS /var -> /private/var and Windows 8.3 names differ.
+  return realpath(await mkdtemp(join(tmpdir(), 'omni-test-')));
 }
 async function repository(): Promise<string> {
   const path = await temporary();
