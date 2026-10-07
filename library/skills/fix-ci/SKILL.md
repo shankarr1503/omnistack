@@ -11,7 +11,7 @@ Red CI is information. "Flaky" is a hypothesis, not a diagnosis.
 
 - Open the failing job's log and find the **first** error, not the last line. Later errors are usually fallout.
 - Note: job name, OS/runtime versions, the exact command, the error text, and the commit SHA.
-- Check whether the same job fails on the base branch. If it does, the failure is not caused by this change — say so, and look for an existing fix to port.
+- Run the exact failing command on the base branch and compare the error. If the same failure exists there, report that it predates this change and look for an existing fix to port — but still check whether this change adds or worsens a failure.
 
 ## 2. Classify
 

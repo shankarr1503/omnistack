@@ -178,3 +178,30 @@ test('common credential files are outside repository tool scope', async () => {
     assert.ok(sensitive(path), path);
   assert.ok(!sensitive('src/netrc.ts'));
 });
+test('review diff treats paths literally and skips excluded paths before capping', async () => {
+  const root = await temp(),
+    home = await temp();
+  await execute('git', ['init', '-q'], root);
+  await writeFile(join(root, '[ab].ts'), 'one\n');
+  await writeFile(join(root, 'a.ts'), 'one\n');
+  await execute('git', ['add', '.'], root);
+  await execute(
+    'git',
+    ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init'],
+    root,
+  );
+  await writeFile(join(root, '[ab].ts'), 'two\n');
+  await writeFile(join(root, 'a.ts'), 'secret-change\n');
+  const repo = await scanRepository(root);
+  // Deny a.ts by privacy; a glob pathspec '[ab].ts' would otherwise pull its diff in.
+  const tools = new ToolController(
+    repo,
+    home,
+    { write: false, commands: false, approvalMode: 'balanced' },
+    1000,
+    (path) => path !== 'a.ts',
+  );
+  const diff = await tools.filteredDiff();
+  assert.match(diff, /\+two/);
+  assert.doesNotMatch(diff, /secret-change/);
+});

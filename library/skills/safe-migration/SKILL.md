@@ -30,6 +30,7 @@ Know your database's behavior; check the docs for your version. Common traps:
 ## Backfills
 
 - Batch by primary key range (e.g. 1–10k rows per batch), commit per batch, sleep between batches, and make it resumable and idempotent.
+- Dual-writes are live during the backfill, so a batch must not overwrite newer data: update only rows still unmigrated (`WHERE new_col IS NULL`), or compare a version/`updated_at` column in the same statement. Verify that writes made during the backfill survive it.
 - Never one giant `UPDATE` on a large table — it holds locks, bloats, and replicates slowly.
 - Measure row counts before and after; verify with a query that finds unmigrated rows.
 

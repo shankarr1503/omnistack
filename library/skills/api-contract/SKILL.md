@@ -34,7 +34,7 @@ Authentication on every endpoint unless deliberately public; object-level author
 
 ## 5. Compatibility
 
-- **Safe:** adding optional request fields, adding response fields, adding endpoints, adding enum values _only if_ clients were told to tolerate unknown values.
+- **Safe:** adding optional request fields, adding response fields _only if_ clients tolerate unknown fields, adding endpoints, adding enum values _only if_ clients were told to tolerate unknown values.
 - **Breaking:** removing/renaming fields, changing types or meaning, making optional fields required, changing defaults, changing error codes, tightening validation.
 - Breaking changes need a new version or a deprecation period with signalling (docs, `Deprecation`/`Sunset` headers, logs of who still calls the old shape).
 

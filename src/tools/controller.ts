@@ -189,12 +189,16 @@ export class ToolController {
   async filteredDiff(): Promise<string> {
     const chunks: string[] = [];
     // Per-file reads also cover untracked files; no raw repository-wide diff reaches a model.
-    for (const { path: file, untracked } of (await this.changedFiles()).slice(0, 200)) {
+    let included = 0;
+    for (const { path: file, untracked } of await this.changedFiles()) {
+      if (included >= 200) break;
       try {
         await this.path(file);
       } catch {
-        continue; // Privacy and boundary exclusions.
+        continue; // Privacy and boundary exclusions do not count toward the cap.
       }
+      included++;
+      // A literal pathspec stops names such as ':' or '*.ts' from widening the diff.
       const diff = untracked
         ? ''
         : await git(this.repo.root, [
@@ -203,7 +207,7 @@ export class ToolController {
             '--no-textconv',
             'HEAD',
             '--',
-            file,
+            ':(literal)' + file,
           ]).catch(() => '');
       if (diff) chunks.push(diff);
       else

@@ -40,7 +40,7 @@ Most real-world breaches here are boring:
 
 ## 4. Check secrets and supply chain
 
-- No credentials, keys or tokens in code, tests, fixtures, git history (`git log -p -S 'BEGIN PRIVATE KEY'`), or client bundles.
+- No credentials, keys or tokens in code, tests, fixtures, git history, or client bundles. Search history with tools that report commit and path without printing the value (`git log --all --format=%h --name-only -S 'BEGIN PRIVATE KEY'`, gitleaks, trufflehog), so the check does not leak the secret into logs.
 - New dependencies: maintained, expected name (typosquats), pinned via lockfile. Run the ecosystem's audit (`npm audit`, `pip-audit`, `cargo audit`, `govulncheck`) and report results.
 - CI: no secrets exposed to untrusted pull requests; actions pinned.
 

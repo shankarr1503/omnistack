@@ -63,7 +63,8 @@ for host in $hosts; do
     name=$(basename "$skill")
     dest="$target/$name"
     if [ "$uninstall" -eq 1 ]; then
-      if [ -f "$dest/SKILL.md" ] && cmp -s "$skill/SKILL.md" "$dest/SKILL.md"; then
+      # Remove only an exact, unmodified copy; any edited or added file keeps the skill.
+      if [ -d "$dest" ] && [ ! -L "$dest" ] && diff -rq "$skill" "$dest" >/dev/null 2>&1; then
         rm -rf "$dest"; installed=$((installed + 1))
       fi
       continue
