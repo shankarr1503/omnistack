@@ -1,0 +1,46 @@
+{
+  "checks": [
+    {
+      "id": "no-direct-rename",
+      "desc": "Does not ship a single-step RENAME COLUMN while old code still reads users.name",
+      "type": "absent_in_migrations",
+      "pattern": "RENAME\\s+COLUMN\\s+name"
+    },
+    {
+      "id": "add-column",
+      "desc": "Adds full_name as a new column (expand)",
+      "type": "present_in_migrations",
+      "pattern": "ADD\\s+COLUMN\\s+(IF\\s+NOT\\s+EXISTS\\s+)?full_name"
+    },
+    {
+      "id": "batched-backfill",
+      "desc": "Backfills in batches rather than one UPDATE over 40M rows",
+      "type": "present_anywhere",
+      "pattern": "(batch|LIMIT\\s+\\d|BETWEEN|id\\s*>\\s*|chunk)"
+    },
+    {
+      "id": "dual-write",
+      "desc": "Plans dual writes / sync (code or trigger) during transition",
+      "type": "present_anywhere",
+      "pattern": "(dual[- ]?write|write (to )?both|trigger|keep .* in sync)"
+    },
+    {
+      "id": "concurrent-safe-backfill",
+      "desc": "Backfill does not overwrite rows already written by new code",
+      "type": "present_anywhere",
+      "pattern": "(full_name\\s+IS\\s+NULL|IS\\s+DISTINCT\\s+FROM|updated_at)"
+    },
+    {
+      "id": "separate-contract",
+      "desc": "Drops the old column only in a later, separate step",
+      "type": "present_anywhere",
+      "pattern": "DROP\\s+COLUMN\\s+(IF\\s+EXISTS\\s+)?name"
+    },
+    {
+      "id": "lock-timeout",
+      "desc": "Sets lock_timeout (or statement_timeout) for DDL on a hot table",
+      "type": "present_anywhere",
+      "pattern": "(lock_timeout|statement_timeout)"
+    }
+  ]
+}

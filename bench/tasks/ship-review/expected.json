@@ -1,0 +1,19 @@
+{
+  "issues": [
+    {
+      "id": "null-contract",
+      "desc": "getUser now returns null instead of throwing NotFoundError; unchanged userEmail caller reads user.email and crashes (500) instead of returning 404",
+      "patterns": ["null", "(userEmail|routes\\.js|caller|404|NotFound)"]
+    },
+    {
+      "id": "sql-injection",
+      "desc": "searchUsers interpolates the search term into SQL",
+      "patterns": ["(inject|interpolat|concatenat|parameteri[sz])"]
+    },
+    {
+      "id": "missing-await",
+      "desc": "audit.log is no longer awaited in deactivateUser (lost/unhandled audit writes)",
+      "patterns": ["await", "audit"]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+We want to rename the `users.name` column to `users.full_name` in our production Postgres database. Write the migration file(s) in `migrations/` and a short `MIGRATION_PLAN.md` explaining how to roll it out.

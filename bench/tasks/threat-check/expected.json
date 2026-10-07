@@ -1,0 +1,34 @@
+{
+  "issues": [
+    {
+      "id": "idor",
+      "desc": "GET /invoices/:id returns any tenant's invoice (no ownership/tenant check)",
+      "patterns": [
+        "(IDOR|tenant|ownership|owner|authori[sz]ation|another (user|customer)|other (users|customers|tenants))",
+        "invoice"
+      ]
+    },
+    {
+      "id": "path-traversal",
+      "desc": "/receipts file parameter allows ../ traversal out of the user's directory",
+      "patterns": ["(travers|\\.\\./|directory escape|path join|outside)"]
+    },
+    {
+      "id": "ssrf",
+      "desc": "/avatar fetches an arbitrary user-supplied URL (SSRF to internal services/metadata)",
+      "patterns": [
+        "(SSRF|server-side request|169\\.254|metadata|internal (network|services|hosts))"
+      ]
+    },
+    {
+      "id": "weak-token",
+      "desc": "session tokens use Math.random (predictable)",
+      "patterns": ["Math\\.random", "(predict|crypto|random)"]
+    },
+    {
+      "id": "plaintext-password",
+      "desc": "passwords stored and compared in plaintext",
+      "patterns": ["(plaintext|plain text|hash|bcrypt|argon|scrypt)"]
+    }
+  ]
+}
