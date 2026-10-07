@@ -133,6 +133,11 @@ if (task === 'root-cause') {
     .split('\0')
     .filter((f) => /\.(sql|md|py)$/.test(f) && !/(^|\/)\.pgtest\//.test(f));
   const all = [migrations, ...touched.map((f) => read(join(work, f)))].join('\n');
+  // The deploy tool applies every top-level migrations/*.sql file in one rollout, so a
+  // deferred step must live elsewhere (a subfolder, a non-.sql file or only the plan).
+  const firstRollout = readdirSync(join(work, 'migrations'), { withFileTypes: true })
+    .filter((e) => e.isFile() && e.name.endsWith('.sql') && e.name !== '0001_create_users.sql')
+    .map((e) => read(join(work, 'migrations', e.name)));
   for (const c of JSON.parse(read(join(dir, 'expected.json'))).checks) {
     const re = new RegExp(c.pattern, 'i');
     const pass =
@@ -141,9 +146,8 @@ if (task === 'root-cause') {
         : c.type === 'present_in_migrations'
           ? re.test(migrations)
           : c.type === 'deferred'
-            ? // Planned somewhere, but never in the same migration file as the expand step.
-              re.test(all) &&
-              !migrationFiles.some((f) => re.test(f) && new RegExp(c.expandPattern, 'i').test(f))
+            ? // Planned somewhere, but not shipped in the same rollout as the expand step.
+              re.test(all) && !firstRollout.some((f) => re.test(f))
             : re.test(all);
     add(c.id, pass, c.desc);
   }
