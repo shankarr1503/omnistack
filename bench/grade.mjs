@@ -149,31 +149,33 @@ if (existsSync(join(dir, 'grade.mjs'))) {
           )
           .map((e) => read(join(e.parentPath, e.name)))
       : [];
-  const migrationFiles = files('migrations');
-  const migrations = migrationFiles.join('\n');
-  // Plans, deferred/rollback SQL outside migrations/, and application code (dual
-  // writes often live there) all count as evidence for the plan-level checks.
-  // Only files the agent created or changed count, so fixture text cannot satisfy a check.
-  const touched = execFileSync(
-    'git',
-    ['ls-files', '--modified', '--others', '--exclude-standard', '-z'],
-    { cwd: work, encoding: 'utf8' },
-  )
-    .split('\0')
-    .filter((f) => /\.(sql|md|py)$/.test(f) && !/(^|\/)\.pgtest\//.test(f));
-  const all = [migrations, ...touched.map((f) => read(join(work, f)))].join('\n');
   // The deploy tool applies every top-level migrations/*.sql file in one rollout, so a
   // deferred step must live elsewhere (a subfolder, a non-.sql file or only the plan).
   const firstRollout = readdirSync(join(work, 'migrations'), { withFileTypes: true })
     .filter((e) => e.isFile() && e.name.endsWith('.sql') && e.name !== '0001_create_users.sql')
     .map((e) => read(join(work, 'migrations', e.name)));
+  const rollout = firstRollout.join('\n');
+  const migrationFiles = files('migrations');
+  const migrations = migrationFiles.join('\n');
+  // Plans, deferred/rollback SQL outside migrations/, and application code (dual
+  // writes often live there) all count as evidence for the plan-level checks.
+  // Only files the agent created or changed count, so fixture text cannot satisfy a check.
+  // Diff against the fixture's root commit so committed, staged and unstaged changes all count.
+  const git = (...a) => execFileSync('git', a, { cwd: work, encoding: 'utf8' }).split('\0');
+  const [root] = git('rev-list', '--max-parents=0', 'HEAD')[0].split('\n');
+  const touched = [
+    ...git('diff', '--name-only', '-z', root),
+    ...git('ls-files', '--others', '--exclude-standard', '-z'),
+  ].filter((f) => /\.(sql|md|py)$/.test(f) && !/(^|\/)\.pgtest\//.test(f));
+  const all = [migrations, ...touched.map((f) => read(join(work, f)))].join('\n');
   for (const c of JSON.parse(read(join(dir, 'expected.json'))).checks) {
     const re = new RegExp(c.pattern, 'i');
     const pass =
+      // Rollout checks look only at what the deploy tool actually applies.
       c.type === 'absent_in_migrations'
-        ? migrations.length > 0 && !re.test(migrations)
+        ? rollout.length > 0 && !re.test(rollout)
         : c.type === 'present_in_migrations'
-          ? re.test(migrations)
+          ? re.test(rollout)
           : c.type === 'deferred'
             ? // Planned somewhere, but not shipped in the same rollout as the expand step.
               re.test(all) && !firstRollout.some((f) => re.test(f))
