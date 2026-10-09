@@ -56,6 +56,30 @@ What happened:
 - One skill run scored lower: on `prove-callers` it updated the in-repo callers but made the old `formatPrice(amount, decimals)` form throw, which would break callers outside the repository. The other three runs kept the old form working. One run is not evidence that the skill causes this, but it is reported as measured.
 - The `prove-callers` fixture shipped with broken `npm test` scripts (`node --test test/unit` fails on Node 22). All four runs noticed and ran the test files directly, so grading was unaffected. The scripts are fixed for future runs.
 
+## Company mode
+
+Does running a request through the whole `company` org beat one agent? `company-tasks` asks for four features on a small task CLI (tags, due dates, filters and an exact `stats` format, keeping old data files working) and grades the result with 14 hidden acceptance tests, plus checks that the agent added tests, kept the existing test and documented the new commands. The grader scores the untouched fixture 2/6 and a reference implementation 5/6 (it adds no tests).
+
+Each run was a headless Claude Code session (`claude -p`, main model Sonnet) in a fresh copy of the fixture, told not to ask questions and not to commit. Company runs used the plugin's `omni:*` agents; v1 is the first version of the skill, v2 the version after a design review and these runs exposed gaps.
+
+| Run                           | Hidden tests | Score   | Tests in repo | Agents | Cost  | Wall time |
+| ----------------------------- | ------------ | ------- | ------------- | ------ | ----- | --------- |
+| Plain Claude Code             | 14/14        | 4/6     | 4             | 0      | $0.13 | 0.5 min   |
+| `company`, quick mode (v1)    | 14/14        | **6/6** | 9             | 4      | $0.65 | 2.8 min   |
+| `company`, quick mode (v2)    | 14/14        | **6/6** | 20            | 4      | $0.76 | 3.3 min   |
+| `company`, standard mode (v1) | 14/14        | **6/6** | 137           | 17     | $3.22 | 13.2 min  |
+| `company`, standard mode (v2) | 14/14        | **6/6** | 106           | 15     | $3.03 | 11.4 min  |
+
+What happened:
+
+- Every run, with or without the company, passed all 14 hidden tests. On a task this size the org did not make the code more correct; plain Claude Code already got it right.
+- What the company added was the engineering around the code: many more tests, an updated README every time (plain Claude Code skipped it), recorded decisions and assumptions, and reviews. In standard mode v1 the staff review caught two real bugs plain Claude Code left in place: a data file without `nextId` produced `#NaN` ids, and saving replaced a symlinked data file with a regular file.
+- Parallelism worked as designed. Standard v1 ran four engineers in one wave and v2 ran two (the CFO capped it); every post-wave ownership check passed, and no engineer touched another ticket's files.
+- It costs 5-6x (quick) to 23-25x (standard) more than one agent and takes 6-26x longer. Use quick mode, or no company at all, for small changes.
+- The CEO chose quick mode on its own for this request; the standard runs were forced by the prompt.
+
+Limits: one run per configuration, one small task, one main model. The next useful experiment is a task large enough that one agent's context struggles, where parallel engineers and reviews should matter more.
+
 ## Overall (48 runs)
 
 Across both rounds, runs without a skill scored 95% and runs with one scored 99%. For this model, the skills did not change whether the agent found the answer; it nearly always did. They changed what it left behind:

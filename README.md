@@ -89,7 +89,7 @@ How it works:
 - **Gates need evidence.** Test output against a recorded baseline, a staff code review, a CSO review, and QA that runs the real product. Nothing is pushed, merged or deployed without your approval.
 - **Sized to the job.** The CEO picks quick (one engineer), standard (full team) or full (with a board meeting) mode; you can override it. Every document lands in `.omni/company/<run>/`, with a live `STATUS.md`, and decisions carry over to the next run in `.omni/company/decisions.md`.
 
-A company costs more tokens than a single agent; see the measurements below before using it for small changes. On hosts without subagents, the same role briefs run one at a time.
+A company costs more than a single agent. On a four-feature task, quick mode cost about 5x and standard mode about 25x what plain Claude Code did; every run passed all hidden acceptance tests, and the company runs also added tests, documentation and reviews (standard mode's review caught two real bugs). Details in [bench/README.md](bench/README.md#company-mode). Use it for features that deserve a team, not one-line fixes. On hosts without subagents, the same role briefs run one at a time.
 
 ## Use them
 
