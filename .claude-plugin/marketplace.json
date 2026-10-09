@@ -11,10 +11,20 @@
     {
       "name": "omni",
       "source": "./library",
-      "description": "16 engineering skills: root-cause debugging, test-first, verification, planning, pre-merge review, security, refactoring, CI fixes, performance, migrations and more.",
-      "version": "1.0.0",
+      "description": "17 engineering skills plus /omni:company, which runs your request through an AI startup: CEO, board, product, CTO, design, security, CFO, an engineering manager, and staff, senior and junior engineers working in parallel, then review, QA and release.",
+      "version": "1.1.0",
       "license": "MIT",
-      "keywords": ["skills", "debugging", "testing", "code-review", "security", "refactoring"]
+      "keywords": [
+        "skills",
+        "debugging",
+        "testing",
+        "code-review",
+        "security",
+        "refactoring",
+        "agents",
+        "multi-agent",
+        "orchestration"
+      ]
     }
   ]
 }

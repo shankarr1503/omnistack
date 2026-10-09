@@ -1,10 +1,10 @@
 # OmniStack
 
-**Senior-engineer habits for your coding agent.** 16 focused skills that make Claude Code, Codex and OpenCode debug from root causes, write tests first, prove their work, review like a staff engineer, and ship safely.
+**Senior-engineer habits for your coding agent, and a whole AI company when you need one.** 16 focused skills that make Claude Code, Codex and OpenCode debug from root causes, write tests first, prove their work, review like a staff engineer, and ship safely. Plus `company`: one command that runs your request through a founder/CEO, a board, product, CTO, design, security, a CFO, an engineering manager, and engineers who build in parallel.
 
 No API key. No runtime. No config. Plain Markdown your agent loads when the task matches.
 
-[![CI](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml/badge.svg)](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Skills](https://img.shields.io/badge/skills-16-brightgreen)
+[![CI](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml/badge.svg)](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Skills](https://img.shields.io/badge/skills-17-brightgreen) ![Roles](https://img.shields.io/badge/company_roles-13-blue)
 
 ## The problem
 

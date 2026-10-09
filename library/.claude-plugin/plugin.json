@@ -1,12 +1,27 @@
 {
   "name": "omni",
-  "description": "Zero-setup engineering skills for coding agents: debug, test, verify, plan, review, secure, refactor and ship.",
-  "version": "1.0.0",
+  "description": "Zero-setup engineering skills for coding agents, plus an AI company: a CEO, board, product, CTO, design, security, CFO, an engineering manager and engineers who build in parallel.",
+  "version": "1.1.0",
   "author": {
     "name": "shankarr1503",
     "url": "https://github.com/shankarr1503"
   },
   "homepage": "https://github.com/shankarr1503/omnistack",
   "repository": "https://github.com/shankarr1503/omnistack",
-  "license": "MIT"
+  "license": "MIT",
+  "agents": [
+    "./skills/company/roles/board.md",
+    "./skills/company/roles/ceo.md",
+    "./skills/company/roles/cfo.md",
+    "./skills/company/roles/cpo.md",
+    "./skills/company/roles/cso.md",
+    "./skills/company/roles/cto.md",
+    "./skills/company/roles/design-lead.md",
+    "./skills/company/roles/eng-manager.md",
+    "./skills/company/roles/junior-engineer.md",
+    "./skills/company/roles/qa-lead.md",
+    "./skills/company/roles/release-manager.md",
+    "./skills/company/roles/senior-engineer.md",
+    "./skills/company/roles/staff-engineer.md"
+  ]
 }

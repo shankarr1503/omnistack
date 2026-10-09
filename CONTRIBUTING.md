@@ -11,6 +11,10 @@ Skills in `library/skills/` are standalone Markdown and need no runtime. To prop
 
 Improvements to existing skills are welcome. Show a case where the current skill led the agent astray.
 
+## Changing the company roles
+
+The `company` skill's roles live in `library/skills/company/roles/<role>.md`. Each file is both a Claude Code subagent (frontmatter: `name`, `description`, `tools`, `model`) and the brief other hosts read. When you add a role, list it in `library/.claude-plugin/plugin.json` under `agents` and call it from `SKILL.md`; `tests/library.test.ts` checks all three agree. Roles that decide or review stay read-only (no `Edit` or `Write`), no role may spawn agents, and every role ends with a fixed report format. Show a real `/omni:company` run before and after the change in your pull request.
+
 ## Runtime development
 
 Requires Node.js 22+ and Git. Install dependencies with `npm ci`, then run `npm run check` (typecheck, lint, tests and build). Tests use temporary repositories and mock providers; paid API keys are not required. Windows PowerShell users can use `npm.cmd`.
