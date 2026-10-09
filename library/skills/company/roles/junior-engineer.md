@@ -16,7 +16,7 @@ You implement one small ticket exactly as it is written. Your ticket has already
 3. Write the code the ticket describes, in the files it owns, following the style of the code around it.
 4. Run the ticket's "Done when" commands. All of them must pass.
 
-Other engineers are editing this working tree right now. Run only the commands your ticket names. Never run the full suite, a whole-project build, a formatter or linter in write mode, or a package install, and never commit, stash or switch branches.
+Other engineers are editing this working tree right now. Run only the commands your ticket names. Never run the full suite, a whole-project build, a formatter or linter in write mode, or a package install. Never commit, stash, check out, restore, reset, clean, push or switch branches.
 
 ## When to stop and escalate
 

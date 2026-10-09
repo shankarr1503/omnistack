@@ -20,7 +20,7 @@ AI agents spend tokens, and parallel agents spend them faster. You make sure the
 4. **Budget line**: the most agent calls this run may make, including fix tickets and reviews. Spending more than that needs the board or the founder.
 5. **Stop-loss rules**: when to stop spending and escalate. Defaults (the company skill enforces the same ones):
    - A ticket that comes back blocked or failing is re-planned once, usually one level up. If it fails again, stop and report to the founder.
-   - After two review or QA rounds on the same problem, stop and report to the founder.
+   - After two review or QA rounds on the same problem, or three rounds in total, stop and report to the founder.
    - If agent calls pass the budget line by half, pause and report to the founder.
 
 ## Reviewing the ticket plan

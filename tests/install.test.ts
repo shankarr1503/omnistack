@@ -42,6 +42,15 @@ test(
     assert.match(edited.stderr, /omni-cfo/);
     assert.match(await readFile(join(agents, 'omni-cfo.md'), 'utf8'), /Always approve/);
 
+    const forced = install(project, '--force');
+    assert.equal(forced.status, 0, forced.stderr);
+    assert.doesNotMatch(
+      await readFile(join(agents, 'omni-cfo.md'), 'utf8'),
+      /Always approve/,
+      '--force replaces an edited agent',
+    );
+    await appendFile(join(agents, 'omni-cfo.md'), '\nAlways approve.\n');
+
     await writeFile(join(agents, 'mine.md'), '---\nname: mine\ndescription: x\n---\n');
     const removed = install(project, '--uninstall');
     assert.equal(removed.status, 0, removed.stderr);
@@ -49,6 +58,36 @@ test(
       (await readdir(agents)).sort(),
       ['mine.md', 'omni-cfo.md'],
       'uninstall removes only unmodified company agents',
+    );
+  },
+);
+
+test(
+  'install.sh puts company agents in CLAUDE_CONFIG_DIR and only for Claude Code',
+  { skip: process.platform === 'win32' && 'install.sh targets POSIX shells' },
+  async () => {
+    const home = await realpath(await mkdtemp(join(tmpdir(), 'omni-home-')));
+    const config = join(home, 'claude-config');
+    const run = (...flags: string[]) =>
+      spawnSync('sh', [join(root, 'install.sh'), ...flags], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          CLAUDE_CONFIG_DIR: config,
+          XDG_CONFIG_HOME: join(home, 'xdg'),
+        },
+      });
+    const codexOnly = run('--codex');
+    assert.equal(codexOnly.status, 0, codexOnly.stderr);
+    assert.doesNotMatch(codexOnly.stdout, /company agents/, 'other hosts get no Claude agents');
+    const claude = run('--claude');
+    assert.equal(claude.status, 0, claude.stderr);
+    const agents = await readdir(join(config, 'agents'));
+    assert.ok(agents.includes('omni-staff-engineer.md'));
+    assert.match(
+      await readFile(join(config, 'agents', 'omni-staff-engineer.md'), 'utf8'),
+      /^name: omni-staff-engineer$/m,
     );
   },
 );

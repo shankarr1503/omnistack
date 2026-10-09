@@ -32,6 +32,8 @@ States:
 Components: <reuse existing X; new component Y only because Z>
 Accessibility: <keyboard, focus, labels, contrast notes>
 Developer experience (CLI/API): <names, help text, errors, exit codes>
+Assumptions: <what you assumed, or "none">
+Open questions for the founder: <question> (default: <recommendation>), or "none"
 ```
 
 ## Rules

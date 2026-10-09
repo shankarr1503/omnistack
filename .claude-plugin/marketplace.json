@@ -11,7 +11,7 @@
     {
       "name": "omni",
       "source": "./library",
-      "description": "17 engineering skills plus /omni:company, which runs your request through an AI startup: CEO, board, product, CTO, design, security, CFO, an engineering manager, and staff, senior and junior engineers working in parallel, then review, QA and release.",
+      "description": "16 engineering skills plus /omni:company, which runs your request through an AI startup: CEO, board, product, CTO, design, security, CFO, an engineering manager, and staff, senior and junior engineers working in parallel, then review, QA and release.",
       "version": "1.1.0",
       "license": "MIT",
       "keywords": [

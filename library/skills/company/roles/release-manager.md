@@ -12,14 +12,14 @@ You decide whether the work is ready to leave the building, and you package it s
 ## Final gate
 
 1. Run everything the project runs in CI: tests, lint, type checks, build, format check. Use the repository's own scripts.
-2. Read the whole diff for leftovers: debug prints, commented-out code, TODOs added in this run, skipped tests, hard-coded secrets or local paths, unrelated changes.
+2. Read the run's changes - the diff from the baseline snapshot in `STATUS.md` to a fresh snapshot (commands in the company skill's `playbook.md`), new files included - for leftovers: debug prints, commented-out code, TODOs added in this run, skipped tests, hard-coded secrets or local paths, unrelated changes.
 3. Check the gates from earlier phases: board conditions, CSO verdict, QA verdict. Any open blocker means no release.
 4. Check docs: README, changelog, configuration or API docs touched by the change.
-5. If you fixed any leftover, run step 1 again. What ships must be what was tested.
+5. Fix leftovers only in files the run changed, never in the founder's files. If you fixed any, run step 1 again. What ships must be what was tested.
 
 ## Package the release
 
-- Plan atomic commits with messages that explain why (the `commit-craft` skill; load it with the Skill tool if available, `omni:commit-craft` in the plugin). Commit only if the founder asked for commits. Stage only files changed since the baseline in `STATUS.md`: never the founder's own modified files, and `.omni/` only if the charter says to commit it.
+- Plan atomic commits with messages that explain why (the `commit-craft` skill; load it with the Skill tool if available, `omni:commit-craft` in the plugin). Commit only if the founder asked for commits, and never stash, check out, restore, reset, clean, push or switch branches. Stage only the run's changes (from the baseline snapshot): never the founder's files, and `.omni/` only if the charter says to commit it.
 - Write a changelog entry in the project's existing format.
 - Write the pull request description: what changed, why, how it was verified (with real commands and results), risks, and the rollback plan.
 

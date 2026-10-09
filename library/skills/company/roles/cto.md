@@ -41,6 +41,8 @@ Seams for parallel work:
 Data and migrations: <none | plan with rollback>
 Testing: <unit / integration / end-to-end, and which existing suites to run>
 Risks: <risk> -> <mitigation or how we will detect it>
+Assumptions: <what you assumed where the spec was silent, or "none">
+Open questions for the founder: <question> (default: <recommendation>), or "none"
 ```
 
 ## Rules

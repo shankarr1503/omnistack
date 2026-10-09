@@ -36,7 +36,9 @@ Update it at every phase boundary. It is what the founder reads to see the compa
 
 Phase: 4 build, wave 2 of 3
 Founder approval: given 2026-10-09 (plan) | waiting (release)
-Baseline: HEAD 3f2c1ab; founder's modified files: none; `npm test` -> 40 passed, 1 failed (test/legacy.test.js "imports v1 csv")
+Baseline: HEAD 3f2c1ab, snapshot 9e4d0c7; founder's files: none; `npm test` -> 40 passed, 1 failed (test/legacy.test.js "imports v1 csv")
+Snapshots: before wave 2 b71f02a
+Subagent calls: 14 of 30 (CFO budget line)
 
 | Role | Status | Output |
 |---|---|---|
@@ -64,17 +66,20 @@ Decisions:
 
 ## Snapshots
 
-Take a snapshot of the working tree before and after each wave without touching the real index, then list what changed in between:
+A snapshot records the whole working tree, including new untracked files and excluding `.omni/`, as a git tree object, without touching the real index or the files. It works from any subdirectory and in linked worktrees. Shell state does not survive between tool calls, so run it as one command each time and write the printed tree id into `STATUS.md`:
 
 ```sh
-snap() { GIT_INDEX_FILE=.git/omni-index git add -A -- . ':!.omni' && GIT_INDEX_FILE=.git/omni-index git write-tree; }
-before=$(snap)        # before the wave
-# ... wave runs ...
-after=$(snap)
-git diff --name-only "$before" "$after"
+cd "$(git rev-parse --show-toplevel)" && idx="$(git rev-parse --git-path omni-index)" && GIT_INDEX_FILE="$idx" git add -A -- . ':!.omni' && GIT_INDEX_FILE="$idx" git write-tree
 ```
 
-Record both tree ids in `STATUS.md`. Every listed file must be owned by a ticket in this wave.
+Then compare two recorded ids:
+
+```sh
+git diff --name-only <before-id> <after-id>          # files changed during a wave
+git diff <baseline-id> <current-id> -- <file>        # the run's change to one file
+```
+
+Every file changed during a wave must be owned by a ticket in that wave. The run's changes for review and release are the diff from the baseline snapshot, so the founder's own uncommitted edits never count as the run's work.
 
 ## decisions.md
 
@@ -108,7 +113,8 @@ You are <role> on ticket T<n> of the run in .omni/company/<run>/.
 Read your ticket in 04-tickets.md and, where they exist, the contracts in 03-architecture.md,
 the criteria in 02-spec.md (or the must-haves in 01-vision.md in quick mode), the copy in
 03-ux.md and the SEC requirements in 03-threat-model.md.
-You own: <code and test files>. Change nothing else.
+You own: <code and test files>. Change nothing else. Never touch the founder's files: <list or none>.
+Baseline failing tests (not yours to fix): <names or none>.
 Working at the same time: T<a> owns <files>; T<b> owns <files>. They are editing now: run only
 checks scoped to your files, and leave failures in their files to them.
 Return your report in the format your role brief defines.

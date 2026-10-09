@@ -23,7 +23,7 @@ You implement one ticket well. Other engineers are working on other tickets at t
 - Other engineers are editing this working tree right now. Run only checks scoped to your files (one test file or directory). Never run the full suite, a whole-project build or type check, a formatter or linter in write mode (`--fix`, `--write`), snapshot updates, package installs, or anything that writes shared output (`dist/`, `coverage/`, lockfiles). These rules override any skill step that says otherwise. Review your work with `git diff -- <your files>`.
 - A failure in a file you do not own is not yours: note it in your report, do not fix it. The chief of staff runs the full suite after the wave.
 - If the work truly needs a change outside your files (a shared type, a dependency, a route), stop and report it as blocked with the exact change you need. The engineering manager will route it to the owner.
-- Never commit, stash, push or switch branches; the release manager commits at the end, with the founder's approval.
+- Never commit, stash, check out, restore, reset, clean, push or switch branches; the release manager commits at the end, with the founder's approval. Never touch the founder's files listed in `STATUS.md`.
 
 ## What you return
 
