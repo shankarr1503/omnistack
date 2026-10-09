@@ -14,7 +14,7 @@ Founder (the user)
       ├─ CPO -> spec        ├─ CTO -> architecture   ├─ Design lead -> UX
       ├─ CSO -> threats     ├─ CFO -> budget
       └─ Engineering manager -> tickets and waves
-         ├─ Staff engineer    -> contracts, integration, review
+         ├─ Staff engineer    -> contracts, hard tickets, review
          ├─ Senior engineers  -> tickets, in parallel
          ├─ Junior engineers  -> fully specified tickets, in parallel
          ├─ QA lead           -> verifies with evidence
@@ -23,68 +23,75 @@ Founder (the user)
 
 ## How to call a role
 
-Each role's brief is a file in this skill's `roles/` folder (`roles/ceo.md`, `roles/cto.md`, ...). Run each role as a separate subagent so its work stays out of your context:
+Each role's brief is a file in this skill's `roles/` folder. Run each role as its own subagent:
 
 1. Claude Code with the OmniStack plugin: subagent type `omni:<role>` (for example `omni:ceo`).
 2. Installed with `install.sh`: subagent type `omni-<role>`.
-3. Otherwise: a general-purpose subagent whose prompt starts with the full text of `roles/<role>.md` (without its frontmatter).
-4. If the host has no subagents at all: play the role yourself, one at a time, following its brief exactly and using its output format.
+3. Otherwise: a general-purpose subagent whose prompt starts with the text of `roles/<role>.md` without its frontmatter. It loses the role's tool limits and model tier; tell it which tools it must not use.
+4. No subagents at all: play each role yourself, one at a time, following its brief and output format exactly.
 
-Every role prompt must contain the founder's request and the _paths_ of the documents it needs. Do not paste whole documents into prompts; roles can read files.
+Every role prompt contains the founder's request, the run folder path, and the paths of the documents the role needs; roles read files themselves. Give `charter.md` and `decisions.md` (when they exist) to the CEO, CTO, engineering manager, CFO and board. **Save each role's output to its file before you start any role that reads it.** Keep your own context small: check diffs with `--name-only` and read only the last lines of test output.
 
 ## Phase 0: intake
 
-1. Restate the request in one sentence. Read `.omni/company/charter.md` (mission, users, constraints) and `.omni/company/decisions.md` if they exist.
-2. Create the run folder `.omni/company/<yyyy-mm-dd>-<slug>/` and `STATUS.md` in it (format in `playbook.md`). Every role's output is saved there by you, under the file names in `playbook.md`.
-3. If the founder said how much process they want ("quick", "full", "don't ask me"), honor it.
+1. Restate the request in one sentence. Read `.omni/company/charter.md` and `.omni/company/decisions.md` if they exist.
+2. Create the run folder `.omni/company/<yyyy-mm-dd>-<slug>/` with `STATUS.md` (format in `playbook.md`).
+3. Record the baseline in `STATUS.md`: `git rev-parse HEAD`, any files already modified (`git status --porcelain`), and the full test suite's result with any failing tests named. If files are already modified, ask the founder to commit or stash them first; if told not to ask, list them as the founder's files and never let a role change or commit them.
+4. Honor any process preference the founder stated ("quick", "full", "don't ask me").
 
 ## Phase 1: vision
 
-Call **ceo**. Save the memo. If it lists questions for the founder, ask them now and wait. Do not let roles guess what the founder wants.
+Call **ceo** and save `01-vision.md`. If it lists questions for the founder, ask them and wait; write the answers into `01-vision.md` under `## Founder answers`. If the founder said not to ask, write the CEO's default for each question there, marked "assumed".
 
-The memo's size sets the mode, which the CFO can change later:
+The memo's size sets the mode. The founder's preference wins; the CFO may move a run between standard and full.
 
-| Mode     | When                                      | Roles used                                    |
-| -------- | ----------------------------------------- | --------------------------------------------- |
-| quick    | small fix or feature, one engineer's work | CEO, one senior engineer, QA, release manager |
-| standard | a real feature across several files       | everyone except the board                     |
-| full     | large, risky or irreversible              | everyone, including the board                 |
+| Mode     | When                                | Roles used                                                                               |
+| -------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| quick    | small change, one engineer's work   | CEO, one senior engineer, QA lead, release manager; CSO only for the triggers in Phase 2 |
+| standard | a real feature across several files | everyone except the board                                                                |
+| full     | large, risky or irreversible        | everyone, including the board                                                            |
+
+**Quick mode** skips Phases 2 and 3 and the staff review. Write `04-tickets.md` yourself with one senior ticket, T1: Owns (code and test files), Do (the memo's must-haves), Done when (a runnable check of the memo's "Success looks like"). Show the founder the ticket in two lines and wait, unless told not to ask. Then run Phase 4 with T1 as the only wave, and Phases 5 and 6 with QA verifying the memo's must-haves.
 
 ## Phase 2: leadership
 
-1. Call **cpo** for the spec.
-2. Then, in parallel (one message with several subagent calls): **cto** for architecture; **design-lead** only if users or developers see or type something new; **cso** (threat model) only if the change touches auth, user data, input parsing, files, network calls, secrets or dependencies.
-3. Read the outputs together. If they contradict each other (the architecture cannot meet a criterion, UX needs data the design lacks), send the conflict back to the two roles involved once, then decide and record the decision.
+1. Call **cpo** and save `02-spec.md`.
+2. Then in parallel (one message, several subagent calls): **cto** (`03-architecture.md`); **design-lead** (`03-ux.md`) only if users or developers see or type something new; **cso** (`03-threat-model.md`) if the spec touches auth, user data, input parsing, files, network calls, secrets or dependencies.
+3. If the outputs contradict each other, send the conflict to the two roles involved once, then decide yourself and record the decision in `STATUS.md` under Decisions.
+4. Collect the open questions and assumptions from these documents. Ask the founder (or, if told not to ask, accept the stated assumption) and append the answers to `02-spec.md` under `## Founder answers`.
 
 ## Phase 3: plan and approve
 
-1. Call **eng-manager** with the spec, architecture, UX spec and threat model for the ticket plan.
-2. **Check file ownership yourself**: within a wave, no file may be owned by two tickets. Send the plan back if it fails.
-3. Call **cfo** with the vision memo and ticket plan. Apply its changes (team size, tiers, cuts).
-4. In full mode, or when the plan includes deleting data, breaking a public API, auth, payments, a production migration or exceeding the budget: call **board**. A rejection goes back to the CEO once; a second rejection goes to the founder.
-5. **Founder checkpoint.** Show a one-screen summary: the bet, must-haves, out of scope, waves and tickets, budget, board resolution. Wait for approval, unless the founder said not to ask.
+1. Call **eng-manager** with the spec, architecture, UX spec and threat model; save `04-tickets.md`.
+2. **Check file ownership yourself**: within a wave, no file - code, test, fixture or config - is owned by two tickets. If it fails, send the plan back once; after that, fix the overlap yourself by moving a ticket to a later wave.
+3. Call **cfo** with the vision memo and ticket plan; save `04-budget.md`. If it merges, cuts or re-levels tickets, send those changes to the engineering manager for a revised plan and repeat step 2.
+4. Call **board** in full mode, or when the plan deletes data, breaks a public API, touches auth or payments, runs a production migration, or exceeds the CFO's budget line. Save `04-board.md`.
+   - Approved with conditions: send the conditions to the engineering manager to become tickets or Done-when checks.
+   - Rejected: send the resolution to the owner of what was rejected (CEO: the bet; CTO: the design; engineering manager: the plan), redo the phases from there, and call the board once more. A second rejection goes to the founder.
+5. **Founder checkpoint.** Show one screen: the bet, must-haves, out of scope, assumptions, waves and tickets, budget, board resolution. Wait for approval, unless the founder said not to ask.
 
 ## Phase 4: build in waves
 
-1. **Wave 0**: the staff engineer builds the contracts and shared hot spots. Run the test suite after it.
-2. **Each later wave**: start one engineer per ticket **in parallel** (one message, several subagent calls), up to the CFO's limit. Use the ticket's level: `staff-engineer`, `senior-engineer` or `junior-engineer`. Each prompt contains the ticket, the run folder path, the files the ticket owns, and the other tickets in the wave with the files _they_ own, so nobody touches them.
-3. Engineers share one working tree; exclusive file ownership is what keeps them apart. Do not use per-agent worktrees unless your host creates them from the current state of the branch, including uncommitted work.
-4. **After every wave**, before the next one:
-   - Save each report. Check `git status` and the diff: every changed file must belong to the ticket that changed it. Investigate any file changed outside its owner.
-   - Run the full test suite (or have the staff engineer integrate). Red means the wave is not done.
-   - **Blocked** or failing tickets go back to the engineering manager to re-plan, usually one level up. Apply the CFO's stop-loss rules; never resend an unchanged ticket.
+1. Before each wave, snapshot the working tree (command in `playbook.md`).
+2. **Wave 0**: the staff engineer builds the contracts and shared hot spots. The suite must be green afterwards.
+3. **Each later wave**: start one engineer per ticket **in parallel** (one message, several subagent calls), up to the CFO's limit, using the ticket's level: `staff-engineer`, `senior-engineer` or `junior-engineer`. Pass the CFO's model tier as the subagent's model when your host allows it. Each prompt follows the engineer prompt in `playbook.md`: the ticket, the files it owns, and the other tickets running now with the files _they_ own.
+4. Engineers share one working tree; exclusive file ownership keeps them apart, and they run only checks scoped to their own files. Do not use per-agent worktrees unless your host creates them from the current state, including uncommitted work.
+5. **After every wave**, before the next one:
+   - Save each report to `reports/`. Snapshot again and list the files changed during this wave. Each must be owned by the ticket that reported changing it; investigate anything else.
+   - Run the full suite yourself. The wave is done when no test fails that passed in the baseline.
+   - A ticket that comes back blocked or failing is re-planned once by the engineering manager (new id, usually one level up; a staff ticket goes back to the CTO). If it fails again, stop and report to the founder.
 
 ## Phase 5: review, security and QA
 
-1. In parallel: **staff-engineer** in review mode on the full diff, and **cso** in release-review mode if it wrote a threat model.
-2. Blocker and major findings become fix tickets from the engineering manager and go through Phase 4 again. Re-review only what changed.
-3. Call **qa-lead**. Bugs become fix tickets; QA re-verifies the fixes.
-4. After two review or QA rounds on the same problem, stop and report to the founder instead of looping.
+1. Call **staff-engineer** in review mode on the run's changes. In parallel, call **cso** in release-review mode if it wrote a threat model or the diff adds dependencies, network calls, or file or input handling.
+2. Blocker and major review findings, and critical and high security findings, become fix tickets from the engineering manager and go through Phase 4. Re-review only what changed.
+3. Call **qa-lead**. Bugs become fix tickets; QA re-verifies them, and the CSO re-reviews any fix in its areas.
+4. After two rounds on the same problem, stop and report to the founder instead of looping.
 
 ## Phase 6: release and retro
 
-1. Call **release-manager** for the final gate and the release package. Nothing is pushed, merged, published or deployed without the founder's explicit approval.
-2. Append the run's key decisions and lessons to `.omni/company/decisions.md` (format in `playbook.md`), so the next run starts from them.
+1. Call **release-manager** for the final gate and the release package. It commits only if the founder asked for commits, stages only files changed since the baseline (never the founder's own files, and `.omni/` only if the charter says so), and never pushes, merges, publishes or deploys without the founder's explicit approval.
+2. Append the run's decisions and lessons to `.omni/company/decisions.md` (format in `playbook.md`).
 3. Finish `STATUS.md` and report to the founder:
 
 ```
@@ -92,7 +99,8 @@ The memo's size sets the mode, which the CFO can change later:
 
 Built: <must-haves delivered, one line each>
 Not built: <cut or deferred, and why>
-Evidence: <test suite result, QA verdict, CSO verdict>
+Evidence: <suite result vs baseline, QA verdict, CSO verdict>
+Assumed: <decisions made without the founder, or "none">
 Team: <roles used, tickets, waves, re-plans>
 Needs you: <decisions or approvals, or "nothing">
 Files: .omni/company/<run>/

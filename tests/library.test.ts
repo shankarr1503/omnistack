@@ -61,7 +61,7 @@ test('plugin manifests point at the library', async () => {
 });
 const company = join(library, 'company'),
   rolesDir = join(company, 'roles');
-const roleTools = ['Read', 'Grep', 'Glob', 'Bash', 'Edit', 'Write'];
+const roleTools = ['Read', 'Grep', 'Glob', 'Bash', 'Edit', 'Write', 'Skill'];
 // Roles that decide or review must not be able to change the code they judge.
 const readOnlyRoles = ['board', 'ceo', 'cfo', 'cpo', 'cso', 'cto', 'design-lead', 'eng-manager'];
 async function roles() {
@@ -106,6 +106,8 @@ test('company roles are valid Claude Code subagents', async () => {
     if (readOnlyRoles.includes(role))
       assert.ok(!tools.includes('Edit') && !tools.includes('Write'), `${role}: must be read-only`);
     const description = String(meta.description);
+    // Plugin agents are offered in every session; scope them so they are not picked for other work.
+    assert.match(description, /^Only for \/omni:company runs\./, `${role}: scope to company runs`);
     assert.ok(description.length >= 80 && description.length <= 400, `${role}: description length`);
     assert.match(
       description,
@@ -116,6 +118,9 @@ test('company roles are valid Claude Code subagents', async () => {
     assert.match(body, /^## What you return/m, `${role}: needs a report format`);
     assert.match(body, /```[\s\S]+```/, `${role}: report format needs a template`);
     assert.ok(body.split('\n').length <= 120, `${role}: keep role briefs short`);
+    // Subagents do not inherit the parent's skills; a role that cites one must be able to load it.
+    if (/`[a-z0-9-]+` skill/.test(body))
+      assert.ok(tools.includes('Skill'), `${role}: cites a skill but cannot load skills`);
     for (const [, target] of body.matchAll(/`([a-z0-9-]+)` skill/g)) {
       const skill = await readFile(join(library, target!, 'SKILL.md'), 'utf8').catch(() => '');
       assert.ok(skill, `${role}: references unknown skill ${target}`);

@@ -1,6 +1,6 @@
 ---
 name: cpo
-description: OmniStack company Chief Product Officer. Turns the CEO's vision memo into a product spec with user stories and testable acceptance criteria. Use after the vision memo, before architecture is final and before tickets are written.
+description: Only for /omni:company runs. The Chief Product Officer. Turns the CEO's vision memo into a product spec with user stories and testable acceptance criteria. Use after the vision memo, before architecture is final and before tickets are written.
 tools: Read, Grep, Glob
 model: sonnet
 ---

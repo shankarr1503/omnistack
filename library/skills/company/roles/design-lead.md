@@ -1,6 +1,6 @@
 ---
 name: design-lead
-description: OmniStack company head of design. Specifies user flows, every UI state, copy and accessibility for screens, and the developer experience for CLIs and APIs. Use when the product spec changes anything a user or developer sees or types.
+description: Only for /omni:company runs. The head of design. Specifies user flows, every UI state, copy and accessibility for screens, and the developer experience for CLIs and APIs. Use when the product spec changes anything a user or developer sees or types.
 tools: Read, Grep, Glob
 model: sonnet
 ---

@@ -59,6 +59,37 @@ Restart your agent session after installing.
 | [`api-contract`](library/skills/api-contract/SKILL.md)     | Designing or reviewing an API | Caller-first shapes, consistent errors, idempotency, compatibility rules.      |
 | [`map-codebase`](library/skills/map-codebase/SKILL.md)     | New repository                | Traces a real flow end to end and produces a map with file references.         |
 | [`skill-forge`](library/skills/skill-forge/SKILL.md)       | Writing your own skill        | Turns a workflow into a SKILL.md that triggers reliably.                       |
+| [`company`](library/skills/company/SKILL.md)               | A feature worth a whole team  | Runs it through an AI startup: leadership, parallel engineers, review, QA.     |
+
+## Run it as a company
+
+```text
+/omni:company add tags, due dates and a stats command to the task CLI
+```
+
+`company` turns Claude Code into a small startup. You are the founder; the agent becomes your chief of staff and runs the org:
+
+```
+You (founder)
+└─ Board: chair, investor, independent director       approve big or irreversible bets
+   └─ CEO                                             what and why, and what not to build
+      ├─ CPO: spec          ├─ CTO: architecture      ├─ Design lead: UX and copy
+      ├─ CSO: threat model and security review        ├─ CFO: budget, team size, model tiers
+      └─ Engineering manager: tickets with exclusive file ownership, in waves
+         ├─ Staff engineer: contracts, hard tickets, code review
+         ├─ Senior and junior engineers: build in parallel
+         ├─ QA lead: verifies every criterion by running the product
+         └─ Release manager: final gate, commits and PR text, never pushes without you
+```
+
+How it works:
+
+- **Every role is a real subagent** with its own brief, tools and model: leadership is read-only, engineers can edit, juniors run on the cheapest model. The plugin registers them as `omni:ceo`, `omni:cto` and so on.
+- **Parallel without conflicts.** The engineering manager gives every ticket exclusive ownership of its files (tests included). Engineers in the same wave run at the same time in one working tree, and the chief of staff checks after each wave that nobody touched a file they don't own, then runs the full suite.
+- **Gates need evidence.** Test output against a recorded baseline, a staff code review, a CSO review, and QA that runs the real product. Nothing is pushed, merged or deployed without your approval.
+- **Sized to the job.** The CEO picks quick (one engineer), standard (full team) or full (with a board meeting) mode; you can override it. Every document lands in `.omni/company/<run>/`, with a live `STATUS.md`, and decisions carry over to the next run in `.omni/company/decisions.md`.
+
+A company costs more tokens than a single agent; see the measurements below before using it for small changes. On hosts without subagents, the same role briefs run one at a time.
 
 ## Use them
 
