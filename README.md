@@ -1,10 +1,10 @@
 # OmniStack
 
-**Senior-engineer habits for your coding agent.** 16 focused skills that make Claude Code, Codex and OpenCode debug from root causes, write tests first, prove their work, review like a staff engineer, and ship safely.
+**Senior-engineer habits for your coding agent, and a whole AI company when you need one.** 16 focused skills that make Claude Code, Codex and OpenCode debug from root causes, write tests first, prove their work, review like a staff engineer, and ship safely. Plus `company`: one command that runs your request through a founder/CEO, a board, product, CTO, design, security, a CFO, an engineering manager, and engineers who build in parallel.
 
 No API key. No runtime. No config. Plain Markdown your agent loads when the task matches.
 
-[![CI](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml/badge.svg)](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Skills](https://img.shields.io/badge/skills-16-brightgreen)
+[![CI](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml/badge.svg)](https://github.com/shankarr1503/omnistack/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![Skills](https://img.shields.io/badge/skills-17-brightgreen) ![Roles](https://img.shields.io/badge/company_roles-13-blue)
 
 ## The problem
 
@@ -59,6 +59,37 @@ Restart your agent session after installing.
 | [`api-contract`](library/skills/api-contract/SKILL.md)     | Designing or reviewing an API | Caller-first shapes, consistent errors, idempotency, compatibility rules.      |
 | [`map-codebase`](library/skills/map-codebase/SKILL.md)     | New repository                | Traces a real flow end to end and produces a map with file references.         |
 | [`skill-forge`](library/skills/skill-forge/SKILL.md)       | Writing your own skill        | Turns a workflow into a SKILL.md that triggers reliably.                       |
+| [`company`](library/skills/company/SKILL.md)               | A feature worth a whole team  | Runs it through an AI startup: leadership, parallel engineers, review, QA.     |
+
+## Run it as a company
+
+```text
+/omni:company add tags, due dates and a stats command to the task CLI
+```
+
+`company` turns Claude Code into a small startup. You are the founder; the agent becomes your chief of staff and runs the org:
+
+```
+You (founder)
+└─ Board: chair, investor, independent director       approve big or irreversible bets
+   └─ CEO                                             what and why, and what not to build
+      ├─ CPO: spec          ├─ CTO: architecture      ├─ Design lead: UX and copy
+      ├─ CSO: threat model and security review        ├─ CFO: budget, team size, model tiers
+      └─ Engineering manager: tickets with exclusive file ownership, in waves
+         ├─ Staff engineer: contracts, hard tickets, code review
+         ├─ Senior and junior engineers: build in parallel
+         ├─ QA lead: verifies every criterion by running the product
+         └─ Release manager: final gate, commits and PR text, never pushes without you
+```
+
+How it works:
+
+- **Every role is a real subagent** with its own brief, tools and model: leadership is read-only, engineers can edit, juniors run on the cheapest model. The plugin registers them as `omni:ceo`, `omni:cto` and so on.
+- **Parallel without conflicts.** The engineering manager gives every ticket exclusive ownership of its files (tests included). Engineers in the same wave run at the same time in one working tree, and the chief of staff checks after each wave that nobody touched a file they don't own, then runs the full suite.
+- **Gates need evidence.** Test output against a recorded baseline, a staff code review, a CSO review, and QA that runs the real product. Nothing is pushed, merged or deployed without your approval.
+- **Sized to the job.** The CEO picks quick (one engineer), standard (full team) or full (with a board meeting) mode; you can override it. Every document lands in `.omni/company/<run>/`, with a live `STATUS.md`, and decisions carry over to the next run in `.omni/company/decisions.md`.
+
+A company costs more than a single agent: on a four-feature task, quick mode cost about 5-7x and standard mode about 23-25x what plain Claude Code did. Every run passed all hidden acceptance tests; the company runs added tests and documentation, but one standard run of an earlier version also shipped a regression nobody asked for (an "atomic save" that replaced symlinked data files); the current version guards against that and its runs scored 7/7. Details in [bench/README.md](bench/README.md#company-mode). Use it for features that deserve a team, not one-line fixes. On hosts without subagents, the same role briefs run one at a time.
 
 ## Use them
 
