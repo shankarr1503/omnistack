@@ -1,0 +1,1 @@
+The dashboard shows the wrong top customers when two customers have the same total: `bo` should be listed before `cy` because bo ordered first. There's a failing test in `test/dashboard.test.js`. Please fix it.

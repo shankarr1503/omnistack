@@ -1,0 +1,20 @@
+2024-03-12T09:14:02.1Z ##[group]Run npm test
+2024-03-12T09:14:02.2Z > reports@ test
+2024-03-12T09:14:02.2Z > node --test
+2024-03-12T09:14:02.6Z TAP version 13
+2024-03-12T09:14:02.7Z # Subtest: late-evening UTC events stay on their UTC day
+2024-03-12T09:14:02.7Z not ok 1 - late-evening UTC events stay on their UTC day
+2024-03-12T09:14:02.7Z   ---
+2024-03-12T09:14:02.7Z   error: |-
+2024-03-12T09:14:02.7Z     Expected values to be strictly equal:
+2024-03-12T09:14:02.7Z     + actual - expected
+2024-03-12T09:14:02.7Z     + '2024-03-11'
+2024-03-12T09:14:02.7Z     - '2024-03-10'
+2024-03-12T09:14:02.7Z   location: '/Users/runner/work/reports/reports/test/day.test.js:5:1'
+2024-03-12T09:14:02.8Z # Subtest: events are grouped by UTC day
+2024-03-12T09:14:02.8Z not ok 2 - events are grouped by UTC day
+2024-03-12T09:14:02.8Z # tests 2
+2024-03-12T09:14:02.8Z # pass 0
+2024-03-12T09:14:02.8Z # fail 2
+2024-03-12T09:14:02.9Z ##[error]Process completed with exit code 1.
+Job: test (macos-latest)   Runner image: macos-14-arm64   Runner TZ: Europe/Berlin

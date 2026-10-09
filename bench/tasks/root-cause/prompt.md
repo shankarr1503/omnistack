@@ -1,0 +1,1 @@
+Users report that `formatSummary` crashes with `TypeError: Cannot read properties of undefined (reading 'toFixed')` for some configuration strings. There is a failing test in `test/summary.test.js`. Please fix the bug.

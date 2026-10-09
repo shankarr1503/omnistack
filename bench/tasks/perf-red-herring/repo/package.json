@@ -1,0 +1,7 @@
+{
+  "name": "catalog-search",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

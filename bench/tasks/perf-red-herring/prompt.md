@@ -1,0 +1,1 @@
+Search is far too slow with our real data (around 50,000 records): a short query like `a` takes many seconds. I'm pretty sure it's the regex in `matches()` being rebuilt for every record. Can you fix it?
