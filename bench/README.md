@@ -60,7 +60,7 @@ What happened:
 
 Does running a request through the whole `company` org beat one agent? `company-tasks` asks for four features on a small task CLI (tags, due dates, filters and an exact `stats` format, keeping old data files working). The grader runs 14 hidden acceptance tests and checks that the agent kept the existing test, added tests, documented the new commands, and did not break behavior nobody asked to change (a symlinked data file must stay a symlink and keep receiving writes, and file permissions must stay as they were). The untouched fixture scores 3/7; a reference implementation with an updated README scores 6/7 (it adds no tests).
 
-Each run was a headless Claude Code session (`claude -p`, main model Sonnet) in a fresh copy of the fixture, told not to ask questions and not to commit. Company runs used the plugin's `omni:*` agents; v1 is the first version of the skill, v2 the version after a design review and these runs exposed gaps.
+Each run was a headless Claude Code session (`claude -p`, main model Sonnet) in a fresh copy of the fixture, told not to ask questions and not to commit. Company runs used the plugin's `omni:*` agents. v1 is the first version of the skill, v2 the version after a design review and the v1 runs exposed gaps, and v3 the current version, after a multi-agent review of v2 and its runs. The first v3 standard attempt hit an account usage limit during review and was re-run from a fresh copy.
 
 | Run                           | Hidden tests | Score   | Tests in repo | Agents | Cost  | Wall time |
 | ----------------------------- | ------------ | ------- | ------------- | ------ | ----- | --------- |
@@ -69,14 +69,16 @@ Each run was a headless Claude Code session (`claude -p`, main model Sonnet) in 
 | `company`, quick mode (v2)    | 14/14        | **7/7** | 20            | 4      | $0.76 | 3.3 min   |
 | `company`, standard mode (v1) | 14/14        | **7/7** | 137           | 17     | $3.22 | 13.2 min  |
 | `company`, standard mode (v2) | 14/14        | 6/7     | 106           | 15     | $3.03 | 11.4 min  |
+| `company`, quick mode (v3)    | 14/14        | **7/7** | 15            | 5      | $0.90 | 3.7 min   |
+| `company`, standard mode (v3) | 14/14        | **7/7** | 116           | 16     | $2.96 | 10.4 min  |
 
 What happened:
 
 - Every run passed all 14 hidden tests. On a task this size the org did not make the requested features more correct; plain Claude Code already got them right.
 - The company runs added the engineering around the code: far more tests, an updated README every time (plain Claude Code skipped it), and recorded decisions and assumptions.
-- Standard mode can also make things worse. In both standard runs the CSO asked for an "atomic save" (write a temp file, then rename it), which nobody requested. In v1 the staff review caught that it replaced a symlinked data file with a regular file and it was fixed; v1 also fixed a bug plain Claude Code left in place (a data file without `nextId` produced `#NaN` ids). In v2 neither review caught it: the run shipped a save that replaces a symlinked data file (so the real file stops updating) and widens a `600` file to `644`, and it kept the `#NaN` bug. The skill now treats security hardening beyond the request as a recommendation for the founder, and the staff review checks that file handling, formats and exit codes nobody asked to change still behave as before.
-- Parallelism worked as designed: standard v1 ran four engineers in one wave and v2 two (its plan had two independent tickets). Every post-wave ownership check passed, and no engineer touched another ticket's files.
-- It costs about 5-6x (quick) to 23-25x (standard) as much as one agent and takes 6-26x longer. Use quick mode, or no company at all, for small changes.
+- Standard mode can also make things worse. In the v1 and v2 standard runs the CSO asked for an "atomic save" (write a temp file, then rename it), which nobody requested. In v1 the staff review caught that it replaced a symlinked data file with a regular file and it was fixed; v1 also fixed a bug plain Claude Code left in place (a data file without `nextId` produced `#NaN` ids). In v2 neither review caught it: the run shipped a save that replaces a symlinked data file (so the real file stops updating) and widens a `600` file to `644`, and it kept the `#NaN` bug. v3 treats security hardening beyond the request as a recommendation for the founder, and its staff review checks that file handling, formats and exit codes nobody asked to change still behave as before. In the v3 standard run the CSO listed the atomic write under recommendations for the founder instead of requiring it. Both v3 runs kept the symlink and permissions intact, and the v3 standard run kept an existing behavior (words like `--foo` stay part of the title) that its own product spec had proposed changing.
+- Parallelism worked as designed: standard v1 ran four engineers in one wave, v2 and v3 two (their plans had two independent tickets per wave). Every post-wave ownership check passed, and no engineer touched another ticket's files.
+- It costs about 5-7x (quick) to 23-25x (standard) as much as one agent and takes 6-26x longer. Use quick mode, or no company at all, for small changes.
 - The CEO chose quick mode on its own for this request; the standard runs were forced by the prompt.
 
 Limits: one run per configuration, one small task, one main model. The next useful experiment is a task large enough that one agent's context struggles, where parallel engineers and reviews should matter more.

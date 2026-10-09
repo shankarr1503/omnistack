@@ -89,7 +89,7 @@ How it works:
 - **Gates need evidence.** Test output against a recorded baseline, a staff code review, a CSO review, and QA that runs the real product. Nothing is pushed, merged or deployed without your approval.
 - **Sized to the job.** The CEO picks quick (one engineer), standard (full team) or full (with a board meeting) mode; you can override it. Every document lands in `.omni/company/<run>/`, with a live `STATUS.md`, and decisions carry over to the next run in `.omni/company/decisions.md`.
 
-A company costs more than a single agent: on a four-feature task, quick mode cost about 5-6x and standard mode about 23-25x what plain Claude Code did. Every run passed all hidden acceptance tests; the company runs added tests and documentation, but one standard run also shipped a regression nobody asked for (an "atomic save" that replaced symlinked data files). Details, and what the skill now does about it, in [bench/README.md](bench/README.md#company-mode). Use it for features that deserve a team, not one-line fixes. On hosts without subagents, the same role briefs run one at a time.
+A company costs more than a single agent: on a four-feature task, quick mode cost about 5-7x and standard mode about 23-25x what plain Claude Code did. Every run passed all hidden acceptance tests; the company runs added tests and documentation, but one standard run of an earlier version also shipped a regression nobody asked for (an "atomic save" that replaced symlinked data files); the current version guards against that and its runs scored 7/7. Details in [bench/README.md](bench/README.md#company-mode). Use it for features that deserve a team, not one-line fixes. On hosts without subagents, the same role briefs run one at a time.
 
 ## Use them
 
