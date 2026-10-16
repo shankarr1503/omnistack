@@ -1,5 +1,6 @@
-import { realpath } from 'node:fs/promises';
-import { extname } from 'node:path';
+import { access, realpath, stat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { extname, join } from 'node:path';
 import { git } from '../utils/process.js';
 import { optionalRead } from '../utils/io.js';
 import { RepositoryError } from '../utils/errors.js';
@@ -15,6 +16,51 @@ export interface Repository {
   instructions: string[];
   commands: { name: string; command: string; args: string[] }[];
   monorepo: boolean;
+}
+async function executable(path: string): Promise<boolean> {
+  try {
+    await access(path, constants.X_OK);
+    return (await stat(path)).isFile();
+  } catch {
+    return false;
+  }
+}
+/** Mirrors how spawn resolves a bare name: PATH only, trying .com and .exe on Windows. */
+async function onPath(
+  name: string,
+  env: NodeJS.ProcessEnv,
+  platform: NodeJS.Platform,
+): Promise<boolean> {
+  const windows = platform === 'win32';
+  for (const dir of (env.PATH ?? env.Path ?? '').split(windows ? ';' : ':'))
+    for (const extension of windows ? ['.com', '.exe'] : [''])
+      if (dir && (await executable(join(dir, name + extension)))) return true;
+  return false;
+}
+/**
+ * The pytest invocation for a Python project: its virtualenv, then `uv run` for uv projects,
+ * then python3 or python from PATH. Windows prefers python, as python3 there is usually the
+ * Microsoft Store stub. Every result is on the verification allowlist.
+ */
+export async function pythonTestCommand(
+  root: string,
+  uvLock: boolean,
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): Promise<{ command: string; args: string[] }> {
+  const pytest = ['-m', 'pytest'];
+  for (const venv of ['.venv', 'venv']) {
+    const command = venv + (platform === 'win32' ? '/Scripts/python.exe' : '/bin/python');
+    if (await executable(join(root, command))) return { command, args: pytest };
+  }
+  // --frozen keeps verification from rewriting a stale uv.lock.
+  if (uvLock && (await onPath('uv', env, platform)))
+    return { command: 'uv', args: ['run', '--frozen', 'pytest'] };
+  const names = platform === 'win32' ? ['python', 'python3'] : ['python3', 'python'];
+  for (const command of names)
+    if (await onPath(command, env, platform)) return { command, args: pytest };
+  // Nothing found: verification reports the check as skipped because the command is missing.
+  return { command: names[0]!, args: pytest };
 }
 export async function scanRepository(cwd: string): Promise<Repository> {
   let root: string;
@@ -88,7 +134,10 @@ export async function scanRepository(cwd: string): Promise<Repository> {
       { name: 'build', command: 'cargo', args: ['check'] },
     );
   if (files.includes('pyproject.toml'))
-    commands.push({ name: 'test', command: 'python', args: ['-m', 'pytest'] });
+    commands.push({
+      name: 'test',
+      ...(await pythonTestCommand(root, files.includes('uv.lock'))),
+    });
   if (files.includes('go.mod'))
     commands.push({ name: 'test', command: 'go', args: ['test', './...'] });
   return {

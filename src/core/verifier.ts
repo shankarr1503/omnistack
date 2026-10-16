@@ -1,4 +1,5 @@
 import type { ToolController } from '../tools/controller.js';
+import { PermissionDeniedError } from '../utils/errors.js';
 export interface VerificationResult {
   name: string;
   status: 'passed' | 'failed' | 'skipped';
@@ -36,11 +37,21 @@ export async function verify(
         output: (result.stdout + result.stderr).slice(-16000),
       });
     } catch (error) {
-      results.push({
-        name: check.name,
-        status: 'failed',
-        output: error instanceof Error ? error.message : 'Command failed',
-      });
+      // A check that never started says nothing about the code, so it must not read as a failure.
+      if (error instanceof PermissionDeniedError)
+        results.push({ name: check.name, status: 'skipped', output: 'Not run: ' + error.message });
+      else if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+        results.push({
+          name: check.name,
+          status: 'skipped',
+          output: `Command not available: ${check.command} was not found, so this check did not run. Install it or configure verification to use an available command.`,
+        });
+      else
+        results.push({
+          name: check.name,
+          status: 'failed',
+          output: error instanceof Error ? error.message : 'Command failed',
+        });
     }
   }
   return results;
