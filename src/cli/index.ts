@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { Command, Option } from 'commander';
 import { stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { constants } from 'node:os';
+import { isAbsolute, resolve, sep } from 'node:path';
 import { identity } from '../identity.js';
 import { omniHome, loadConfig } from '../config/loader.js';
 import { setup, initProject, doctor, uninstallSkills } from './lifecycle.js';
@@ -15,6 +16,7 @@ import type { Mode } from '../router/classifier.js';
 import { Ledger } from '../telemetry/ledger.js';
 import { updateRuntime } from './update.js';
 import { recoverCheckpoint } from '../tools/recovery.js';
+import { OmniError, RepositoryError } from '../utils/errors.js';
 const program = new Command()
   .name(identity.command)
   .version(identity.version)
@@ -120,6 +122,12 @@ function workflowOptions(command: Command): Command {
     .option('--allow-write', 'Authorize repository file edits')
     .option('--allow-commands', 'Authorize verification scripts (execute repository code)');
 }
+const CANCEL_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const,
+  CANCEL_GRACE_MS = 5_000;
+/** True for arguments the user meant as a location rather than as review instructions. */
+function looksLikePath(word: string): boolean {
+  return isAbsolute(word) || word.startsWith('~') || word.includes('/') || word.includes(sep);
+}
 async function runWorkflow(
   workflow: string,
   words: string[],
@@ -128,16 +136,19 @@ async function runWorkflow(
   invocationContext(process.env, options.host);
   let target = options.repo ?? process.cwd(),
     request = words.join(' ');
-  if (
-    workflow === 'review' &&
-    words.length === 1 &&
-    !options.repo &&
-    (await stat(words[0]!)
-      .then((s) => s.isDirectory())
-      .catch(() => false))
-  ) {
-    target = words[0]!;
-    request = '';
+  if (workflow === 'review' && words.length === 1 && !options.repo) {
+    const [word] = words as [string];
+    const directory = await stat(word).then(
+      (s) => s.isDirectory(),
+      () => undefined,
+    );
+    // A mistyped path must not silently fall back to reviewing (and uploading) the current repository.
+    if (directory === undefined && looksLikePath(word))
+      throw new RepositoryError('Repository path not found: ' + word);
+    if (directory) {
+      target = word;
+      request = '';
+    }
   }
   const repo = await scanRepository(resolve(target));
   const config = await loadConfig({
@@ -145,8 +156,21 @@ async function runWorkflow(
     flags: options.policy ? { routing: { policy: options.policy } } : {},
   });
   const cancellation = new AbortController(),
-    cancel = (): void => cancellation.abort(new Error('Cancelled by user'));
-  process.once('SIGINT', cancel);
+    cancel = (signal: NodeJS.Signals): void => {
+      const reason = new OmniError(
+        'CANCELLED',
+        signal === 'SIGINT' ? 'Cancelled by user' : 'Cancelled by ' + signal,
+      );
+      cancellation.abort(reason);
+      // Steps that ignore cancellation (such as queueing for the execution lock) must not keep a
+      // terminated process alive; a lock left by this forced exit is reclaimed as stale.
+      setTimeout(() => {
+        console.error(safeJson({ error: reason.message }));
+        process.exit(128 + constants.signals[signal]);
+      }, CANCEL_GRACE_MS).unref();
+    };
+  // Host timeouts send SIGTERM and closed terminals SIGHUP; both must release the lock like SIGINT.
+  for (const signal of CANCEL_SIGNALS) process.once(signal, cancel);
   try {
     const result = await orchestrate(config, {
       root: repo.root,
@@ -167,7 +191,7 @@ async function runWorkflow(
     )
       process.exitCode = 2;
   } finally {
-    process.removeListener('SIGINT', cancel);
+    for (const signal of CANCEL_SIGNALS) process.removeListener(signal, cancel);
   }
 }
 for (const name of [
