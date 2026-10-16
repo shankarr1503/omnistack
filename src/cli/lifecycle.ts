@@ -5,7 +5,7 @@ import { stringify } from 'yaml';
 import { ConfigSchema, type Config } from '../config/schema.js';
 import { loadConfig } from '../config/loader.js';
 import { hostAdapters, type HostAdapter } from '../hosts/adapter.js';
-import { installSkills, uninstallSkills, sourceRoot } from '../skills/compiler.js';
+import { installSkillsReport, uninstallSkills, sourceRoot } from '../skills/compiler.js';
 import { optionalRead } from '../utils/io.js';
 import { execute } from '../utils/process.js';
 import { scanRepository } from '../repository/scanner.js';
@@ -50,8 +50,19 @@ export async function setup(home: string, adapters = hostAdapters()): Promise<un
     });
   }
   await loadConfig({ home });
-  const installed = await installSkills(home, adapters);
-  return { installed: installed.length, home, doctor: await doctor(home, process.cwd(), adapters) };
+  const { installed, preserved } = await installSkillsReport(home, adapters);
+  return {
+    installed: installed.length,
+    preserved,
+    ...(preserved.length
+      ? {
+          warning:
+            'Edited OmniStack wrappers were preserved and not updated. To regenerate one, delete it and run omni setup again.',
+        }
+      : {}),
+    home,
+    doctor: await doctor(home, process.cwd(), adapters),
+  };
 }
 export async function initProject(cwd: string): Promise<string[]> {
   const repo = await scanRepository(cwd),
