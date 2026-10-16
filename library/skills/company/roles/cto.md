@@ -1,6 +1,6 @@
 ---
 name: cto
-description: Only for /omni:company runs. The CTO. Reads the codebase and designs the architecture for the spec - components, interfaces between them, data changes, risks and the seams that let several engineers work in parallel. Use after the product spec, before tickets.
+description: Only for company-skill runs (/omni:company or /company). The CTO. Reads the codebase and designs the architecture for the spec - components, interfaces between them, data changes, risks and the seams that let several engineers work in parallel. Use after the product spec, before tickets.
 tools: Read, Grep, Glob, Bash, Skill
 model: inherit
 ---

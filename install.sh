@@ -47,10 +47,21 @@ if [ -n "$project" ]; then
 fi
 
 if [ -z "$hosts" ]; then
-  [ -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ] && hosts="$hosts claude"
+  claude_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" plugin_installed=0
+  # The Claude Code plugin already provides these skills as omni:<name>; a second copy
+  # would load every skill twice, so auto-detection leaves Claude Code to the plugin.
+  if [ "$uninstall" -eq 0 ] && grep -q '"omni@omnistack"' "$claude_home/plugins/installed_plugins.json" 2>/dev/null; then
+    plugin_installed=1
+    echo "claude: the omni plugin is installed; skipping Claude Code (pass --claude to install anyway)"
+  elif [ -d "$claude_home" ]; then
+    hosts="$hosts claude"
+  fi
   { [ -d "$HOME/.codex" ] || [ -d "$HOME/.agents" ]; } && hosts="$hosts codex"
   [ -d "${XDG_CONFIG_HOME:-$HOME/.config}/opencode" ] && hosts="$hosts opencode"
-  [ -n "$hosts" ] || hosts="claude"
+  if [ -z "$hosts" ]; then
+    [ "$plugin_installed" -eq 1 ] && exit 0
+    hosts="claude"
+  fi
 fi
 
 # Company roles become Claude Code subagents named omni-<role>, so they cannot

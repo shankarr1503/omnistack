@@ -19,8 +19,8 @@
 
 This is a substantial initial implementation, not a declaration that every item in the product vision is complete.
 
-- Independent GitHub repository created at https://github.com/shankarr1503/omnistack. npm publication and name availability remain unverified.
-- Windows tests run locally. Linux/macOS CI is configured but has not run here. Interactive Claude/Codex/OpenCode sessions and live API inference have not been exercised.
+- Independent GitHub repository at https://github.com/shankarr1503/omnistack. The runtime is not published to npm, and the unscoped npm name `omnistack` belongs to an unrelated package, so publishing needs a different (for example scoped) name.
+- CI runs typecheck, lint, the full test suite, build and `npm pack` on Ubuntu, macOS and Windows with Node 22 and 24, and is green on main. The skill library and plugin have been exercised in real Claude Code sessions (see bench/README.md). The runtime's interactive host sessions and live API inference against real providers have not been exercised.
 - Native Google/AWS/Azure identity adapters, wire streaming and complete multimodal content are future work.
 - Research uses repository context and model knowledge; live browser/MCP research requires an embedding integration.
 - DAG and worktree facilities are reusable SDK components; the default implementation worker edits serially. Automatic concurrent worktree integration is not enabled.
@@ -34,4 +34,4 @@ This is a substantial initial implementation, not a declaration that every item 
 
 ## Highest-priority next work
 
-Run the OS CI matrix and interactive host smoke tests, exercise real provider fixtures for account-specific models, add process-tree/container isolation, then complete durable installer transactions and production release signing. See SECURITY.md before executing untrusted repository scripts.
+Run interactive host smoke tests, exercise real provider fixtures for account-specific models, add process-tree/container isolation, then complete durable installer transactions and production release signing. See SECURITY.md before executing untrusted repository scripts.

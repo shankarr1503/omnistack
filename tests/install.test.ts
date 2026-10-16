@@ -1,7 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readFile, readdir, realpath, writeFile, appendFile } from 'node:fs/promises';
+import {
+  appendFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -88,6 +96,42 @@ test(
     assert.match(
       await readFile(join(config, 'agents', 'omni-staff-engineer.md'), 'utf8'),
       /^name: omni-staff-engineer$/m,
+    );
+  },
+);
+
+test(
+  'install.sh leaves Claude Code to the plugin when it is installed, unless --claude is given',
+  { skip: process.platform === 'win32' && 'install.sh targets POSIX shells' },
+  async () => {
+    const home = await realpath(await mkdtemp(join(tmpdir(), 'omni-plugin-')));
+    const config = join(home, '.claude');
+    await mkdir(join(config, 'plugins'), { recursive: true });
+    await writeFile(
+      join(config, 'plugins', 'installed_plugins.json'),
+      JSON.stringify({ version: 2, plugins: { 'omni@omnistack': [{ scope: 'user' }] } }),
+    );
+    await mkdir(join(home, '.codex'));
+    const run = (...flags: string[]) =>
+      spawnSync('sh', [join(root, 'install.sh'), ...flags], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          HOME: home,
+          CLAUDE_CONFIG_DIR: '',
+          XDG_CONFIG_HOME: join(home, 'xdg'),
+        },
+      });
+    const auto = run();
+    assert.equal(auto.status, 0, auto.stderr);
+    assert.match(auto.stdout, /omni plugin is installed; skipping Claude Code/);
+    assert.match(auto.stdout, /codex: installed/);
+    await assert.rejects(readdir(join(config, 'skills')), 'no duplicate Claude Code skills');
+    const explicit = run('--claude');
+    assert.equal(explicit.status, 0, explicit.stderr);
+    assert.ok(
+      (await readdir(join(config, 'skills'))).includes('company'),
+      '--claude still installs',
     );
   },
 );

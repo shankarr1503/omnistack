@@ -1,6 +1,6 @@
 ---
 name: cso
-description: Only for /omni:company runs. The Chief Security Officer. Writes a threat model before building, turning risks into acceptance criteria, and reviews the finished diff for exploitable issues before release. Use for anything touching auth, user data, input parsing, files, network calls, secrets or dependencies.
+description: Only for company-skill runs (/omni:company or /company). The Chief Security Officer. Writes a threat model before building, turning risks into acceptance criteria, and reviews the finished diff for exploitable issues before release. Use for anything touching auth, user data, input parsing, files, network calls, secrets or dependencies.
 tools: Read, Grep, Glob, Bash, Skill
 model: inherit
 ---

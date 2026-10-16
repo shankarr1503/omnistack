@@ -27,13 +27,15 @@ Each skill here encodes what an experienced engineer does instead, as ordered st
 /plugin install omni@omnistack
 ```
 
+To update later: `/plugin marketplace update omnistack`, then `/plugin update omni@omnistack` (or turn on auto-update for the marketplace under `/plugin`). Plugin skills are namespaced: `/omni:root-cause`, `/omni:company`.
+
 **Claude Code, Codex and OpenCode** (one command; installs into every host it finds):
 
 ```sh
 git clone --depth 1 https://github.com/shankarr1503/omnistack && sh omnistack/install.sh
 ```
 
-Options: `--claude`, `--codex`, `--opencode` to pick hosts, `--project <dir>` to install into one repository (and commit it for your team), `--uninstall` to remove. The installer never overwrites a skill you have edited unless you pass `--force`.
+Options: `--claude`, `--codex`, `--opencode` to pick hosts, `--project <dir>` to install into one repository (and commit it for your team), `--uninstall` to remove. The installer never overwrites a skill you have edited unless you pass `--force`. Skills installed this way are not namespaced: `/root-cause`, `/company` in Claude Code, `$root-cause` in Codex. If you already use the Claude Code plugin, the installer skips Claude Code unless you pass `--claude`, so you don't get every skill twice.
 
 **Manual:** copy any folder from [`library/skills`](library/skills) into `~/.claude/skills/`, `~/.agents/skills/` (Codex) or `~/.config/opencode/skills/`.
 
@@ -66,6 +68,8 @@ Restart your agent session after installing.
 ```text
 /omni:company add tags, due dates and a stats command to the task CLI
 ```
+
+That is the plugin command. Installed with `install.sh` or by hand, use `/company ...` in Claude Code or `$company ...` in Codex, or just ask your agent to "use the company skill to ...".
 
 `company` turns Claude Code into a small startup. You are the founder; the agent becomes your chief of staff and runs the org:
 
@@ -161,14 +165,7 @@ omni doctor
 
 On PowerShell with restricted script execution, use `npm.cmd`. `setup.cmd` performs install/build/setup on Windows. On macOS/Linux use `sh setup` (or `./setup` after setting its executable bit). `npm link` exposes `omni` on PATH; generated host skills also reference the absolute built entrypoint, so they do not depend on PATH.
 
-Prepared distribution after publication:
-
-```sh
-npm install -g omnistack
-omni setup
-```
-
-Do not run that distribution command expecting this unpublished checkout today. Source: https://github.com/shankarr1503/omnistack.
+The runtime is not published to npm. The unscoped npm name `omnistack` belongs to an unrelated package, so do not run `npm install -g omnistack`; install from this repository as shown above. Source: https://github.com/shankarr1503/omnistack.
 
 Source checkout, runtime state, and target repositories are distinct:
 
@@ -293,7 +290,7 @@ Writes use expected hashes to reject stale edits and checkpoint preimages before
 - No eligible models: configure IDs/capabilities after discovery, then inspect privacy restrictions and credentials.
 - Commands skipped: use `--allow-commands` only after trusting the repository's scripts. Use a container/VM for untrusted code.
 - Update: `omni update` previews, `omni update --apply` updates only the runtime and registrations. Dirty runtime checkouts are refused.
-- Uninstall: `omni uninstall` removes only unchanged owned wrappers. For npm, then use `npm uninstall -g omnistack`. Source checkouts and user data are deliberately preserved for manual removal.
+- Uninstall: `omni uninstall` removes only unchanged owned wrappers. If you installed with `npm link`, run `npm unlink -g` in the checkout. Source checkouts and user data are deliberately preserved for manual removal.
 - A crashed process can leave `state/execution.lock`: inspect the recorded PID before removing a stale lock. Normal exit releases it.
 - Contributions: `omni dev-link` registers this build; rebuild after edits. `omni dev-unlink` removes its unchanged wrappers.
 

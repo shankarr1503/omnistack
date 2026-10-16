@@ -13,3 +13,6 @@ logs/
 generated/
 runtime/
 *.tsbuildinfo
+
+# Temporary agent worktrees created by Claude Code
+.claude/worktrees/

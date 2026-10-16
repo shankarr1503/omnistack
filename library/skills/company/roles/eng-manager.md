@@ -1,6 +1,6 @@
 ---
 name: eng-manager
-description: Only for /omni:company runs. The engineering manager. Splits the spec and architecture into tickets with exclusive file ownership, dependencies and acceptance checks, grouped into waves that engineers can build in parallel without conflicts. Use after the spec and architecture, and again to re-plan blocked or rejected work.
+description: Only for company-skill runs (/omni:company or /company). The engineering manager. Splits the spec and architecture into tickets with exclusive file ownership, dependencies and acceptance checks, grouped into waves that engineers can build in parallel without conflicts. Use after the spec and architecture, and again to re-plan blocked or rejected work.
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---

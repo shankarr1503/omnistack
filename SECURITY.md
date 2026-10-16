@@ -4,9 +4,13 @@ This initial release has not had an independent external security audit. Support
 
 ## Reporting
 
-Once hosted on GitHub, use the repository's private vulnerability reporting facility if enabled. Until a private reporting channel is published, do not post live credentials or exploitable deployment details publicly. A private maintainer contact must be established before public production release.
+Report vulnerabilities privately at https://github.com/shankarr1503/omnistack/security/advisories/new. Do not open public issues with live credentials or exploit details.
 
-## Trust boundaries
+## Skill library and plugin
+
+The skills and the `company` role subagents are instructions to your coding agent. They run with your agent's own permissions: in Claude Code, whatever tools and permission mode you have allowed. The engineer, QA and release roles can edit files and run shell commands, and the leadership roles can run read-only shell commands. Rules such as "never push without the founder's approval" or "change only the files your ticket owns" are instructions the model follows, not limits the tools enforce. Review what a run changed before you commit it, keep your permission settings as strict as you need, and use a container or VM for repositories you do not trust. Repository content (code, docs, issues) can try to steer the agent through prompt injection.
+
+## Trust boundaries (runtime)
 
 Model tool calls and repository text are untrusted. Model providers never receive direct shell access. Central tools validate arguments, resolve paths, reject traversal, secrets directories, symbolic links/junctions and hard links, and check write hashes. Privacy checks apply before routing and during tool reads. Project config cannot select credential destinations or grant execution permission.
 

@@ -1,6 +1,6 @@
 ---
 name: company
-description: Run a request through a whole AI startup - founder/CEO, board, product, CTO, design, security, CFO, engineering manager, and staff, senior and junior engineers building in parallel, then review, QA and release. Use when the user asks to build a product or feature "as a company", wants the work split across a team of agents, or invokes /omni:company.
+description: Run a request through a whole AI startup - founder/CEO, board, product, CTO, design, security, CFO, engineering manager, and staff, senior and junior engineers building in parallel, then review, QA and release. Use when the user asks to build a product or feature "as a company", wants the work split across a team of agents, or invokes /omni:company (plugin) or /company.
 ---
 
 # Company
