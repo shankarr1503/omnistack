@@ -70,6 +70,7 @@ export interface ModelProvider {
   readonly local: boolean;
   listModels(signal?: AbortSignal): Promise<Model[]>;
   generate(request: GenerateRequest): Promise<UnifiedResponse>;
+  /** Resolves unhealthy on provider failure; rejects with `signal.reason` once cancelled. */
   healthCheck(signal?: AbortSignal): Promise<ProviderHealth>;
 }
 export interface StreamingProvider extends ModelProvider {

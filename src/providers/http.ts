@@ -61,6 +61,8 @@ const AnthropicResponse = z.object({
   usage: Usage,
   stop_reason: z.string().nullable().optional(),
 });
+/** Catalog checks gate routing, so they get a short budget independent of execution.modelTimeout. */
+export const HEALTH_CHECK_TIMEOUT_MS = 10_000;
 export class HttpProvider implements ModelProvider {
   readonly id: string;
   readonly local: boolean;
@@ -135,9 +137,14 @@ export class HttpProvider implements ModelProvider {
       ...this.config.models.find((c) => c.id === m.id),
     }));
   }
-  async healthCheck(signal?: AbortSignal): Promise<ProviderHealth> {
+  /** Rejects with the caller's cancellation reason; any other failure reports unhealthy. */
+  async healthCheck(
+    signal?: AbortSignal,
+    timeoutMs = HEALTH_CHECK_TIMEOUT_MS,
+  ): Promise<ProviderHealth> {
+    const timeout = AbortSignal.timeout(timeoutMs);
     try {
-      await this.listModels(signal);
+      await this.listModels(signal ? AbortSignal.any([signal, timeout]) : timeout);
       return {
         provider: this.id,
         healthy: true,
@@ -145,10 +152,15 @@ export class HttpProvider implements ModelProvider {
         checkedAt: new Date().toISOString(),
       };
     } catch (error) {
+      if (signal?.aborted) throw signal.reason;
       return {
         provider: this.id,
         healthy: false,
-        message: error instanceof Error ? error.message : 'Health check failed',
+        message: timeout.aborted
+          ? `Health check timed out after ${timeoutMs} ms`
+          : error instanceof Error
+            ? error.message
+            : 'Health check failed',
         checkedAt: new Date().toISOString(),
       };
     }
