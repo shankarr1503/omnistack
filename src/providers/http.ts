@@ -15,6 +15,7 @@ import {
   RateLimitError,
   TimeoutError,
 } from '../utils/errors.js';
+import { redact } from '../utils/io.js';
 const Usage = z
   .object({
     prompt_tokens: z.number().default(0),
@@ -63,6 +64,57 @@ const AnthropicResponse = z.object({
 });
 /** Catalog checks gate routing, so they get a short budget independent of execution.modelTimeout. */
 export const HEALTH_CHECK_TIMEOUT_MS = 10_000;
+/** Error shapes of OpenAI, Anthropic, Ollama, vLLM and FastAPI-based servers. */
+const ErrorBody = z.union([
+  z.object({ error: z.object({ message: z.string() }) }),
+  z.object({ error: z.string() }),
+  z.object({ message: z.string() }),
+  z.object({ detail: z.string() }),
+]);
+const DETAIL_LIMIT = 300;
+/** Provider-supplied text made safe for an error message: redacted, one line, bounded. */
+function sanitize(text: string): string {
+  const line = redact(text)
+    .replace(/[\p{Cc}\s]+/gu, ' ')
+    .trim();
+  return line.length > DETAIL_LIMIT ? `${line.slice(0, DETAIL_LIMIT)}…` : line;
+}
+/** The structured error message from a JSON error body; raw text and HTML are never echoed. */
+function errorMessage(body: string): string | undefined {
+  let json: unknown;
+  try {
+    json = JSON.parse(body);
+  } catch {
+    return undefined;
+  }
+  const parsed = ErrorBody.safeParse(json);
+  if (!parsed.success) return undefined;
+  const data = parsed.data;
+  const text =
+    'error' in data
+      ? typeof data.error === 'string'
+        ? data.error
+        : data.error.message
+      : 'message' in data
+        ? data.message
+        : data.detail;
+  return sanitize(text) || undefined;
+}
+/** Why fetch failed, including the network cause (for example ECONNREFUSED or a TLS error). */
+function connectionFailure(error: unknown): string {
+  if (!(error instanceof Error)) return 'network error';
+  const summary = error.message || error.name;
+  const cause: unknown = error.cause;
+  if (!(cause instanceof Error)) return sanitize(summary);
+  const code = 'code' in cause && typeof cause.code === 'string' ? cause.code : '';
+  const causes: unknown[] =
+    cause instanceof AggregateError ? [cause, ...(cause.errors as unknown[])] : [cause];
+  const text = [...new Set(causes.map((c) => (c instanceof Error ? c.message : '')))]
+    .filter(Boolean)
+    .join('; ');
+  const detail = code && !text.includes(code) ? (text ? `${code}: ${text}` : code) : text;
+  return sanitize(detail ? `${summary} (${detail})` : summary);
+}
 export class HttpProvider implements ModelProvider {
   readonly id: string;
   readonly local: boolean;
@@ -77,6 +129,12 @@ export class HttpProvider implements ModelProvider {
   }
   private get anthropic(): boolean {
     return this.config.type.startsWith('anthropic');
+  }
+  /** OpenAI rejects max_tokens for reasoning models; other compatible servers expect it. */
+  private get tokenLimit(): 'max_tokens' | 'max_completion_tokens' {
+    return new URL(this.config.baseUrl).hostname === 'api.openai.com'
+      ? 'max_completion_tokens'
+      : 'max_tokens';
   }
   private async request(path: string, body?: unknown, signal?: AbortSignal): Promise<unknown> {
     const key = this.config.apiKeyEnv ? this.env[this.config.apiKeyEnv] : undefined;
@@ -103,7 +161,7 @@ export class HttpProvider implements ModelProvider {
       if (signal?.aborted) throw signal.reason;
       if (timeout.aborted) throw new TimeoutError();
       throw new ProviderError(
-        `Connection failed for ${this.id}: ${error instanceof Error ? error.name : 'network error'}`,
+        `Connection failed for ${this.id}: ${connectionFailure(error)}`,
         true,
       );
     }
@@ -111,11 +169,12 @@ export class HttpProvider implements ModelProvider {
       if ([401, 403].includes(response.status)) throw new AuthenticationError();
       if (response.status === 429) throw new RateLimitError();
       if (response.status === 404) throw new ModelUnavailableError();
-      const detail = (await response.text()).slice(0, 4000);
-      if (/context.{0,30}(length|window|limit)|too many tokens/i.test(detail))
+      const text = await response.text();
+      if (/context.{0,30}(length|window|limit)|too many tokens/i.test(text.slice(0, 4000)))
         throw new ContextOverflowError();
+      const reason = errorMessage(text);
       throw new ProviderError(
-        `Provider ${this.id} returned HTTP ${response.status}`,
+        `Provider ${this.id} returned HTTP ${response.status}${reason ? `: ${reason}` : ''}`,
         response.status >= 500,
       );
     }
@@ -242,7 +301,7 @@ export class HttpProvider implements ModelProvider {
       {
         model: req.model,
         messages,
-        max_tokens: req.maxTokens,
+        [this.tokenLimit]: req.maxTokens,
         ...(req.tools?.length
           ? { tools: req.tools.map((t) => ({ type: 'function', function: t })) }
           : {}),
