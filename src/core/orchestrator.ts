@@ -96,7 +96,7 @@ async function orchestrateUnlocked(config: Config, options: RunOptions): Promise
   const health = await registry.health(options.signal);
   for (const model of registry.models.values())
     model.healthy = health.find((h) => h.provider === model.provider)?.healthy;
-  const router = new ModelRouter(config, observations),
+  const router = new ModelRouter(config, observations, health),
     models = router.select(
       [...registry.models.values()],
       ['coding'],

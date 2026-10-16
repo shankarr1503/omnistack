@@ -16,9 +16,13 @@ Model tool calls and repository text are untrusted. Model providers never receiv
 
 All destructive shell commands are denied by the model tool surface. There is no model-accessible push, deploy, publish, reset-hard, branch deletion, arbitrary shell, environment dump or dependency-install tool. Explicit runtime maintenance commands are separate CLI actions.
 
+## Provider errors
+
+When a provider rejects a request, OmniStack shows only the structured error message from its JSON body, after redaction, on one line and capped at 300 characters. Raw text and HTML bodies are never echoed.
+
 ## Repository commands
 
-`--allow-commands` authorizes execution of supported repository checks. Tests, compiler plugins and lint configuration can execute arbitrary code. An allowlist **does not sandbox that code**. The child environment omits API-key variables, but scripts still run as the developer and may access their filesystem. For hostile repositories use an OS/container sandbox with restricted credentials and network access. Do not infer safety from a command being named `test`.
+`--allow-commands` authorizes execution of supported repository checks. Tests, compiler plugins and lint configuration can execute arbitrary code. An allowlist **does not sandbox that code**. The child environment omits API-key variables, but scripts still run as the developer and may access their filesystem. For hostile repositories use an OS/container sandbox with restricted credentials and network access. Do not infer safety from a command being named `test`. The allowlist includes the repository's own `.venv`/`venv` Python interpreter and `uv run --frozen pytest`, which run at the same trust level as its tests; `uv run` may create `.venv` and download the locked dependencies.
 
 **Combining `--allow-write` with `--allow-commands` lets the model run code it wrote.** The model can edit a test file, `package.json` script, `conftest.py` or build script, then run the allowlisted check that executes it. The command allowlist limits which commands can be named; it does not limit what code they run. Repository text can steer the model through prompt injection, so only grant both flags together on repositories you trust, or inside a container/VM.
 

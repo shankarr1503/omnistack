@@ -1,6 +1,6 @@
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
-import { sourceRoot, installSkills } from '../skills/compiler.js';
+import { sourceRoot, installSkillsReport } from '../skills/compiler.js';
 import { hostAdapters } from '../hosts/adapter.js';
 import { execute, git } from '../utils/process.js';
 import { ConfigurationError } from '../utils/errors.js';
@@ -58,6 +58,6 @@ export async function updateRuntime(
         : await execute(command!, args, source, { timeout: 600000 });
     if (result.code !== 0) throw new Error('Update stopped: ' + result.stderr);
   }
-  await installSkills(home, hostAdapters());
-  return { updated: true, doctor: await doctor(home) };
+  const { preserved } = await installSkillsReport(home, hostAdapters());
+  return { updated: true, preserved, doctor: await doctor(home) };
 }

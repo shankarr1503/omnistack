@@ -7,7 +7,7 @@ import { identity } from '../identity.js';
 import { omniHome, loadConfig } from '../config/loader.js';
 import { setup, initProject, doctor, uninstallSkills } from './lifecycle.js';
 import { hostAdapters, invocationContext, type HostId } from '../hosts/adapter.js';
-import { loadSkills, installSkills } from '../skills/compiler.js';
+import { loadSkills, installSkillsReport } from '../skills/compiler.js';
 import { ModelRegistry } from '../registry/model-registry.js';
 import { safeJson } from '../utils/io.js';
 import { orchestrate } from '../core/orchestrator.js';
@@ -45,7 +45,7 @@ program
 program
   .command('dev-link')
   .description('Register global skills pointing at this checkout')
-  .action(async () => output(await installSkills(omniHome(), hostAdapters())));
+  .action(async () => output(await installSkillsReport(omniHome(), hostAdapters())));
 program
   .command('dev-unlink')
   .description('Remove owned development host registrations')

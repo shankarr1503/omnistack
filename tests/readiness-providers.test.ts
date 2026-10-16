@@ -232,6 +232,8 @@ test('F15: review against a stopped local provider reports provider health', asy
   assert.match(error.message, /unhealthy provider/);
   assert.match(error.message, /local/);
   assert.match(error.message, /omni providers health/);
+  // The orchestrator passes the health results to the router, so the cause is named too.
+  assert.match(error.message, /Connection failed for local: .*ECONNREFUSED/);
 });
 
 function rejecting(status: number, body: unknown): typeof fetch {

@@ -20,6 +20,15 @@ The skill library (the Claude Code plugin `omni`, also installed by `install.sh`
 
 ## Runtime — unreleased
 
+- `omni ship` reports a `status` and exits with code 2 when verification fails or the review has a critical or high finding (it used to exit 0 with no status).
+- `omni run`, `omni debug`, `omni optimize` and their host wrappers work without `--allow-write`: they investigate with read-only tools and return a diagnosis instead of failing.
+- Concurrent runs sharing one home queue (up to 10 minutes) instead of failing; SIGTERM and SIGHUP release the execution lock like Ctrl-C, and a lock left by a dead process is reclaimed automatically.
+- Ctrl-C during the provider health check cancels at once; health checks time out after 10 seconds instead of the model timeout.
+- `omni setup`, `dev-link` and `update` keep wrappers you edited (listed as `preserved`) instead of aborting, and setup and uninstall recognize OmniStack's own wrappers after `~/.omnistack` was deleted.
+- Python verification uses the project's `.venv`/`venv` interpreter, `uv run --frozen pytest`, `python3` or `python`; a check whose command is missing or not allowed is reported as skipped, not failed.
+- Connection failures name the network cause (for example ECONNREFUSED) instead of `TypeError`; provider 4xx/5xx errors include the provider's redacted error message; "No eligible models" names each exclusion and its reason; requests to api.openai.com send `max_completion_tokens`.
+- `omni review <path>` fails for a path that does not exist instead of reviewing the current directory.
+- `omni update --apply` no longer installs `omnistack@latest` from npm: that name belongs to an unrelated package. Installs that are not a git checkout are refused until the runtime is published.
 - Fixed: review diffs covered only the first 100 repository files; `edit_file` interpreted `$&`/`$$` in replacement text; non-normalised written paths were missing from review diffs.
 - Common credential files (`.netrc`, `.npmrc`, `.pypirc`, `.docker/config.json`, keystores, Terraform state) are outside tool scope.
 

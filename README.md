@@ -261,7 +261,7 @@ FAST selects a suitable implementer. TEAM plans, implements, verifies, independe
 
 The engine uses concise conclusions and validated schemas. It does not request or retain hidden reasoning traces. Anthropic thinking blocks are excluded.
 
-Build/test/typecheck/lint scripts are detected in Node, Rust, Go and Python repositories. Running them requires `--allow-commands`: a test script is arbitrary repository code. Missing or unapproved checks are reported as skipped. Unresolved failures produce `needs-attention`, not a success claim. No workflow commits, pushes, publishes or deploys implicitly.
+Build/test/typecheck/lint scripts are detected in Node, Rust, Go and Python repositories; Python tests run with the project's `.venv`/`venv` interpreter, then `uv run --frozen pytest` for uv projects, then `python3` or `python`. Running them requires `--allow-commands`: a test script is arbitrary repository code. Missing, unavailable or unapproved checks are reported as skipped. `omni ship` exits with code 2 when verification fails or the review has a critical or high finding. Unresolved failures produce `needs-attention`, not a success claim. No workflow commits, pushes, publishes or deploys implicitly.
 
 ### Privacy and recovery
 
@@ -289,9 +289,10 @@ Writes use expected hashes to reject stale edits and checkpoint preimages before
 - `omni doctor`: runtime, Git, detected hosts, wrappers, credentials availability and provider catalog connectivity. Catalog reachability is not an inference test.
 - No eligible models: configure IDs/capabilities after discovery, then inspect privacy restrictions and credentials.
 - Commands skipped: use `--allow-commands` only after trusting the repository's scripts. Use a container/VM for untrusted code.
-- Update: `omni update` previews, `omni update --apply` updates only the runtime and registrations. Dirty runtime checkouts are refused.
-- Uninstall: `omni uninstall` removes only unchanged owned wrappers. If you installed with `npm link`, run `npm unlink -g` in the checkout. Source checkouts and user data are deliberately preserved for manual removal.
-- A crashed process can leave `state/execution.lock`: inspect the recorded PID before removing a stale lock. Normal exit releases it.
+- Update: `omni update` previews, `omni update --apply` updates only the runtime and registrations. It updates git-checkout installs only; dirty checkouts are refused, and installs that are not a git checkout are refused until the runtime is published on npm. Wrappers you edited are kept and listed as `preserved`.
+- Uninstall: `omni uninstall` removes only unchanged owned wrappers, including when `~/.omnistack` was deleted. If you installed with `npm link`, run `npm unlink -g` in the checkout. Source checkouts and user data are deliberately preserved for manual removal.
+- Runs sharing one home queue behind each other (up to 10 minutes). Ctrl-C, SIGTERM and SIGHUP cancel the run and release `state/execution.lock`; a lock left by a killed process is reclaimed automatically once its PID is gone on the same host. Remove one by hand only if it was recorded on another host (a shared home on a network filesystem), after confirming that process is not running.
+- Without `--allow-write`, `omni run`, `omni debug`, `omni optimize` and the `/omni`, `/omni-debug` and `/omni-optimize` wrappers investigate read-only and return a diagnosis (any fix comes back as a text patch); `omni build` still requires `--allow-write`. `omni review <path>` fails with "Repository path not found" for a path that does not exist instead of reviewing the current directory.
 - Contributions: `omni dev-link` registers this build; rebuild after edits. `omni dev-unlink` removes its unchanged wrappers.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [status/roadmap](docs/STATUS.md). Branding is centralized in `src/identity.ts`; package, skill and directory names still require a coordinated rename for compatibility.
