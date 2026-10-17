@@ -318,6 +318,25 @@ test('HTTP health check uses a short timeout separate from the model timeout', a
   assert.equal(health.healthy, false);
   assert.match(health.message, /timed out/);
 });
+test('execution.healthTimeout sets the health check budget for configured providers', async () => {
+  assert.equal(ConfigSchema.parse({}).execution.healthTimeout, http.HEALTH_CHECK_TIMEOUT_MS);
+  const server = createServer(() => undefined); // accepts requests and never answers
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert.ok(address && typeof address !== 'string');
+  try {
+    const config = ConfigSchema.parse({
+      execution: { healthTimeout: 50 },
+      providers: [{ ...slowProvider, baseUrl: `http://127.0.0.1:${address.port}/v1` }],
+    });
+    const [health] = await within(ModelRegistry.fromConfig(config).health(), 2000, 'health');
+    assert.equal(health?.healthy, false);
+    assert.match(health?.message ?? '', /timed out after 50 ms/);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
 test('registry health stops waiting for a provider that ignores cancellation', async () => {
   const stuck: ModelProvider = {
     id: 'stuck',
@@ -364,40 +383,45 @@ test('orchestrate rethrows cancellation during the health check instead of routi
     },
   );
 });
-test('CLI Ctrl-C during an unresponsive health check exits promptly as cancelled', async () => {
-  const root = await repo();
-  let healthRequested: () => void = () => undefined;
-  const requested = new Promise<void>((resolve) => {
-    healthRequested = resolve;
-  });
-  // The catalog endpoint accepts the connection and never answers.
-  const provider = await fixtureProvider((request) => {
-    if (request.url === '/v1/models') healthRequested();
-  });
-  try {
-    const child = spawn(process.execPath, ['--import', loader, entry, 'review', '--repo', root], {
-      cwd: root,
-      env: { ...process.env, OMNI_HOME: provider.home, OMNI_DEPTH: '0' },
-      stdio: ['ignore', 'pipe', 'pipe'],
+test(
+  'CLI Ctrl-C during an unresponsive health check exits promptly as cancelled',
+  // Windows cannot deliver SIGINT to a child process; the in-process cancellation tests cover it there.
+  { skip: process.platform === 'win32' && 'signals cannot be sent to a child process on Windows' },
+  async () => {
+    const root = await repo();
+    let healthRequested: () => void = () => undefined;
+    const requested = new Promise<void>((resolve) => {
+      healthRequested = resolve;
     });
-    let stderr = '';
-    child.stderr.on('data', (data: Buffer) => {
-      stderr += data.toString();
+    // The catalog endpoint accepts the connection and never answers.
+    const provider = await fixtureProvider((request) => {
+      if (request.url === '/v1/models') healthRequested();
     });
-    const exited = new Promise<number | null>((resolve) => child.once('close', resolve));
     try {
-      await within(requested, 30_000, 'health check request');
-      const interrupted = Date.now();
-      child.kill('SIGINT');
-      const code = await within(exited, 5000, 'CLI after SIGINT');
-      assert.ok(Date.now() - interrupted < 5000);
-      assert.equal(code, 1);
-      assert.match(stderr, /Cancelled by user/);
-      assert.doesNotMatch(stderr, /No eligible models/);
+      const child = spawn(process.execPath, ['--import', loader, entry, 'review', '--repo', root], {
+        cwd: root,
+        env: { ...process.env, OMNI_HOME: provider.home, OMNI_DEPTH: '0' },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let stderr = '';
+      child.stderr.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+      const exited = new Promise<number | null>((resolve) => child.once('close', resolve));
+      try {
+        await within(requested, 30_000, 'health check request');
+        const interrupted = Date.now();
+        child.kill('SIGINT');
+        const code = await within(exited, 5000, 'CLI after SIGINT');
+        assert.ok(Date.now() - interrupted < 5000);
+        assert.equal(code, 1);
+        assert.match(stderr, /Cancelled by user/);
+        assert.doesNotMatch(stderr, /No eligible models/);
+      } finally {
+        child.kill('SIGKILL');
+      }
     } finally {
-      child.kill('SIGKILL');
+      await provider.close();
     }
-  } finally {
-    await provider.close();
-  }
-});
+  },
+);

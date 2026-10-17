@@ -26,10 +26,10 @@ This is a substantial initial implementation, not a declaration that every item 
 - DAG and worktree facilities are reusable SDK components; the default implementation worker edits serially. Automatic concurrent worktree integration is not enabled.
 - Retrieval ranks paths/instruction files, then caps context. Full AST/LSP/dependency graphs and large-monorepo indexing remain future work.
 - Installer updates preserve unrelated files but are not a single multi-file filesystem transaction. A power loss during registration may require inspection of the manifest and generated wrapper.
-- The command controller is an authorization layer, not an OS sandbox. Repository scripts can run arbitrary code once approved. Subprocess tree termination and adversarial concurrent filesystem mutation need stronger platform isolation before hostile-repository certification.
+- The command controller is an authorization layer, not an OS sandbox. Repository scripts can run arbitrary code once approved. On Linux and macOS a timed-out or cancelled command is stopped with its whole process group; on Windows only the direct child is stopped, and a process that leaves its group escapes on any platform. Adversarial concurrent filesystem mutation also needs stronger platform isolation before hostile-repository certification.
 - Glob privacy and heuristic redaction cannot prove that public files contain no copied secrets or sensitive data. Models' prose can still reveal self-identities beyond known identity tokens.
 - Local budgets are conservative estimates based on configured prices. Provider billing remains authoritative; vendor-specific hidden/cached tokens and third-party extensions need additional accounting tests.
-- Uninstall removes owned registrations; npm removes its own package. Checkout/user data removal is deliberately manual.
+- Uninstall removes owned registrations. The runtime is not published to npm, so its checkout and user data are removed by hand, deliberately.
 - Parallel executions sharing one global home are serialized to protect budget accounting. Remote/distributed ledgers are not implemented.
 
 ## Highest-priority next work

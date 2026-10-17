@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer, type Server } from 'node:http';
-import { access, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readFile, utimes, writeFile } from 'node:fs/promises';
 import { hostname, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -134,6 +134,24 @@ test('execution lock reclaims a lock whose recorded process no longer exists', a
     started: '2026-01-01T00:00:00.000Z',
   });
   assert.equal(await withExecutionLock(home, async () => 'reused pid'), 'reused pid');
+  assert.equal(await exists(lockPath(home)), false);
+});
+
+test('execution lock reclaims an unreadable lock only once it is too old to be mid-write', async () => {
+  const home = await temp('unreadable');
+  await mkdir(join(home, 'state'), { recursive: true });
+  await writeFile(lockPath(home), '');
+  await assert.rejects(
+    withExecutionLock(home, async () => 'must not run', { waitMs: 200 }),
+    /owner unreadable/,
+    'a fresh empty lock may belong to an owner that is still writing it',
+  );
+  const crashed = new Date(Date.now() - 60_000);
+  await utimes(lockPath(home), crashed, crashed);
+  assert.equal(
+    await withExecutionLock(home, async () => 'reclaimed', { waitMs: 200 }),
+    'reclaimed',
+  );
   assert.equal(await exists(lockPath(home)), false);
 });
 

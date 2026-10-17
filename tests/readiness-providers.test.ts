@@ -10,6 +10,7 @@ import { ModelRouter } from '../src/router/model-router.js';
 import { orchestrate } from '../src/core/orchestrator.js';
 import { execute } from '../src/utils/process.js';
 import { OmniError } from '../src/utils/errors.js';
+import { redact } from '../src/utils/io.js';
 import type { Model, ProviderHealth } from '../src/providers/types.js';
 
 async function temporary(): Promise<string> {
@@ -309,6 +310,40 @@ test('F16: provider error details are redacted, single-line and bounded', async 
     );
     assert.equal(opaque.message, 'Provider remote returned HTTP 502');
   }
+});
+
+test('provider errors never echo the configured key or a bearer token', async () => {
+  const key = 'local-key-without-prefix-42';
+  const keyed = ProviderConfigSchema.parse({ ...remote, apiKeyEnv: 'REMOTE_KEY' });
+  const echoed = await rejection(
+    new HttpProvider(
+      keyed,
+      1000,
+      { REMOTE_KEY: key },
+      rejecting(400, {
+        error: { message: `Unknown key ${key}; sent Authorization: Bearer ${key}` },
+      }),
+    ).generate(request),
+  );
+  assert.ok(!echoed.message.includes(key), echoed.message);
+  assert.match(echoed.message, /Unknown key \[REDACTED\]/);
+  const network = await rejection(
+    new HttpProvider(
+      keyed,
+      1000,
+      { REMOTE_KEY: key },
+      failingTransport(new TypeError('fetch failed', { cause: new Error(`proxy saw ${key}`) })),
+    ).generate(request),
+  );
+  assert.ok(!network.message.includes(key), network.message);
+  assert.equal(
+    redact('Authorization: Bearer abcdefghijklmnopqrstuvwxyz'),
+    'Authorization: Bearer [REDACTED]',
+  );
+  assert.equal(
+    redact('curl -H "authorization: Basic dXNlcjpwYXNzd29yZA=="'),
+    'curl -H "authorization: Basic [REDACTED]"',
+  );
 });
 
 test('F16: OpenAI endpoints receive max_completion_tokens; other endpoints keep max_tokens', async () => {

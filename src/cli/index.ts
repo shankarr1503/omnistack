@@ -124,8 +124,12 @@ function workflowOptions(command: Command): Command {
 }
 const CANCEL_SIGNALS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const,
   CANCEL_GRACE_MS = 5_000;
-/** True for arguments the user meant as a location rather than as review instructions. */
+/**
+ * True for arguments the user meant as a location rather than as review instructions: a single
+ * word that is absolute, starts with ~ or contains a path separator. Text with spaces is a request.
+ */
 function looksLikePath(word: string): boolean {
+  if (/\s/.test(word)) return false;
   return isAbsolute(word) || word.startsWith('~') || word.includes('/') || word.includes(sep);
 }
 async function runWorkflow(

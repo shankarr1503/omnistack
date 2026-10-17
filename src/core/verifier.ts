@@ -37,6 +37,8 @@ export async function verify(
         output: (result.stdout + result.stderr).slice(-16000),
       });
     } catch (error) {
+      // A cancelled run has no verification result; report the cancellation, not a failed check.
+      if (controller.signal?.aborted) throw controller.signal.reason;
       // A check that never started says nothing about the code, so it must not read as a failure.
       if (error instanceof PermissionDeniedError)
         results.push({ name: check.name, status: 'skipped', output: 'Not run: ' + error.message });

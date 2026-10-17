@@ -15,22 +15,45 @@ export async function execute(
   options: { timeout?: number; signal?: AbortSignal; env?: NodeJS.ProcessEnv } = {},
 ): Promise<CommandResult> {
   options.signal?.throwIfAborted();
+  // On POSIX the child leads its own process group, so cancelling or timing out also stops
+  // the processes it started (npm -> node test.js); killing only the child would orphan them.
+  const group = process.platform !== 'win32';
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       cwd,
       shell: false,
       windowsHide: true,
+      detached: group,
       env: options.env ?? process.env,
-      signal: options.signal,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '',
       stderr = '',
-      timedOut = false;
+      timedOut = false,
+      aborted = false;
+    const stop = () => {
+      if (group && child.pid !== undefined)
+        try {
+          process.kill(-child.pid, 'SIGTERM');
+          return;
+        } catch {
+          // The group is already gone; fall back to the child itself.
+        }
+      child.kill();
+    };
+    const onAbort = () => {
+      aborted = true;
+      stop();
+    };
+    options.signal?.addEventListener('abort', onAbort, { once: true });
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      stop();
     }, options.timeout ?? 30_000);
+    const settle = () => {
+      clearTimeout(timer);
+      options.signal?.removeEventListener('abort', onAbort);
+    };
     child.stdout.on('data', (data: Buffer) => {
       stdout = (stdout + data.toString()).slice(-512_000);
     });
@@ -38,12 +61,13 @@ export async function execute(
       stderr = (stderr + data.toString()).slice(-512_000);
     });
     child.once('error', (error) => {
-      clearTimeout(timer);
+      settle();
       reject(error);
     });
     child.once('close', (code) => {
-      clearTimeout(timer);
-      if (timedOut) reject(new TimeoutError());
+      settle();
+      if (aborted) reject(options.signal?.reason ?? new Error('The operation was aborted'));
+      else if (timedOut) reject(new TimeoutError());
       else
         resolve({
           command: [command, ...args],

@@ -16,7 +16,13 @@ export class ModelRegistry {
     const registry = new ModelRegistry();
     for (const p of config.providers)
       registry.register(
-        new HttpProvider(p, config.execution.modelTimeout),
+        new HttpProvider(
+          p,
+          config.execution.modelTimeout,
+          process.env,
+          fetch,
+          config.execution.healthTimeout,
+        ),
         p.models.map((m) => ({ ...m, provider: p.id, local: p.local })),
       );
     return registry;

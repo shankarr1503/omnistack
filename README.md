@@ -35,7 +35,7 @@ To update later: `/plugin marketplace update omnistack`, then `/plugin update om
 git clone --depth 1 https://github.com/shankarr1503/omnistack && sh omnistack/install.sh
 ```
 
-Options: `--claude`, `--codex`, `--opencode` to pick hosts, `--project <dir>` to install into one repository (and commit it for your team), `--uninstall` to remove. The installer never overwrites a skill you have edited unless you pass `--force`. Skills installed this way are not namespaced: `/root-cause`, `/company` in Claude Code, `$root-cause` in Codex. If you already use the Claude Code plugin, the installer skips Claude Code unless you pass `--claude`, so you don't get every skill twice.
+Options: `--claude`, `--codex`, `--opencode` to pick hosts, `--project <dir>` to install into one repository (and commit it for your team), `--uninstall` to remove. The installer never overwrites a skill you have edited unless you pass `--force`. Skills installed this way are not namespaced: `/root-cause`, `/company` in Claude Code, `$root-cause` in Codex. If the Claude Code plugin is installed and enabled for your user, the installer skips Claude Code unless you pass `--claude` or `--project`, so you don't get every skill twice.
 
 **Manual:** copy any folder from [`library/skills`](library/skills) into `~/.claude/skills/`, `~/.agents/skills/` (Codex) or `~/.config/opencode/skills/`.
 
@@ -128,7 +128,7 @@ Two rounds, 48 runs, one model: **95% without skills, 99% with them.** The secon
 
 ## OmniStack runtime (optional, advanced)
 
-The skills above need nothing else. OmniStack also ships a multi-model runtime that coordinates planning, implementation and review across models you configure. It needs Node.js 22+ and your own model provider.
+The skills above need nothing else. OmniStack also ships a multi-model runtime that coordinates planning, implementation and review across models you configure. It needs Node.js 22+ and your own model provider. The runtime is versioned separately from the skill plugin (see [CHANGELOG.md](CHANGELOG.md)).
 
 **Status: initial engineering release, not yet production-certified.** See [validation and remaining limits](docs/STATUS.md).
 
@@ -292,7 +292,7 @@ Writes use expected hashes to reject stale edits and checkpoint preimages before
 - Update: `omni update` previews, `omni update --apply` updates only the runtime and registrations. It updates git-checkout installs only; dirty checkouts are refused, and installs that are not a git checkout are refused until the runtime is published on npm. Wrappers you edited are kept and listed as `preserved`.
 - Uninstall: `omni uninstall` removes only unchanged owned wrappers, including when `~/.omnistack` was deleted. If you installed with `npm link`, run `npm unlink -g` in the checkout. Source checkouts and user data are deliberately preserved for manual removal.
 - Runs sharing one home queue behind each other (up to 10 minutes). Ctrl-C, SIGTERM and SIGHUP cancel the run and release `state/execution.lock`; a lock left by a killed process is reclaimed automatically once its PID is gone on the same host. Remove one by hand only if it was recorded on another host (a shared home on a network filesystem), after confirming that process is not running.
-- Without `--allow-write`, `omni run`, `omni debug`, `omni optimize` and the `/omni`, `/omni-debug` and `/omni-optimize` wrappers investigate read-only and return a diagnosis (any fix comes back as a text patch); `omni build` still requires `--allow-write`. `omni review <path>` fails with "Repository path not found" for a path that does not exist instead of reviewing the current directory.
+- Without `--allow-write`, `omni run`, `omni debug`, `omni optimize` and the `/omni`, `/omni-debug` and `/omni-optimize` wrappers investigate read-only and return a diagnosis (any fix comes back as a text patch); `omni build` still requires `--allow-write`. `omni review <path>` fails with "Repository path not found" for a path that does not exist instead of reviewing the current directory. A single argument counts as a path when it has no spaces and is absolute, starts with `~` or contains a path separator (`../app`, `~/src/app`); anything else, such as `omni review "focus on src/auth.ts"`, is review instructions for the current repository.
 - Contributions: `omni dev-link` registers this build; rebuild after edits. `omni dev-unlink` removes its unchanged wrappers.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [status/roadmap](docs/STATUS.md). Branding is centralized in `src/identity.ts`; package, skill and directory names still require a coordinated rename for compatibility.

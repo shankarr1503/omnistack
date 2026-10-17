@@ -104,34 +104,54 @@ test(
   'install.sh leaves Claude Code to the plugin when it is installed, unless --claude is given',
   { skip: process.platform === 'win32' && 'install.sh targets POSIX shells' },
   async () => {
-    const home = await realpath(await mkdtemp(join(tmpdir(), 'omni-plugin-')));
-    const config = join(home, '.claude');
-    await mkdir(join(config, 'plugins'), { recursive: true });
-    await writeFile(
-      join(config, 'plugins', 'installed_plugins.json'),
-      JSON.stringify({ version: 2, plugins: { 'omni@omnistack': [{ scope: 'user' }] } }),
-    );
-    await mkdir(join(home, '.codex'));
-    const run = (...flags: string[]) =>
+    /** A home with the omni plugin recorded as installed, a Codex directory and optional settings. */
+    const home = async (scope: string, settings?: unknown) => {
+      const dir = await realpath(await mkdtemp(join(tmpdir(), 'omni-plugin-')));
+      await mkdir(join(dir, '.claude', 'plugins'), { recursive: true });
+      await writeFile(
+        join(dir, '.claude', 'plugins', 'installed_plugins.json'),
+        JSON.stringify({ version: 2, plugins: { 'omni@omnistack': [{ scope }] } }),
+      );
+      if (settings)
+        await writeFile(join(dir, '.claude', 'settings.json'), JSON.stringify(settings));
+      await mkdir(join(dir, '.codex'));
+      return dir;
+    };
+    const run = (dir: string, ...flags: string[]) =>
       spawnSync('sh', [join(root, 'install.sh'), ...flags], {
         encoding: 'utf8',
         env: {
           ...process.env,
-          HOME: home,
+          HOME: dir,
           CLAUDE_CONFIG_DIR: '',
-          XDG_CONFIG_HOME: join(home, 'xdg'),
+          XDG_CONFIG_HOME: join(dir, 'xdg'),
         },
       });
-    const auto = run();
+    const skills = (dir: string) => readdir(join(dir, '.claude', 'skills'));
+
+    const user = await home('user', { enabledPlugins: { 'omni@omnistack': true } });
+    const auto = run(user);
     assert.equal(auto.status, 0, auto.stderr);
     assert.match(auto.stdout, /omni plugin is installed; skipping Claude Code/);
     assert.match(auto.stdout, /codex: installed/);
-    await assert.rejects(readdir(join(config, 'skills')), 'no duplicate Claude Code skills');
-    const explicit = run('--claude');
+    await assert.rejects(skills(user), 'no duplicate Claude Code skills');
+    const explicit = run(user, '--claude');
     assert.equal(explicit.status, 0, explicit.stderr);
-    assert.ok(
-      (await readdir(join(config, 'skills'))).includes('company'),
-      '--claude still installs',
-    );
+    assert.ok((await skills(user)).includes('company'), '--claude still installs');
+
+    const project = await realpath(await mkdtemp(join(tmpdir(), 'omni-plugin-project-')));
+    const shared = run(await home('user'), '--project', project);
+    assert.equal(shared.status, 0, shared.stderr);
+    assert.ok((await skills(project)).includes('company'), 'a project install never skips');
+
+    for (const [label, dir] of [
+      ['disabled', await home('user', { enabledPlugins: { 'omni@omnistack': false } })],
+      ['installed for one project only', await home('project')],
+    ] as const) {
+      const result = run(dir);
+      assert.equal(result.status, 0, result.stderr);
+      assert.doesNotMatch(result.stdout, /skipping Claude Code/, label);
+      assert.ok((await skills(dir)).includes('company'), `${label}: Claude Code gets the skills`);
+    }
   },
 );

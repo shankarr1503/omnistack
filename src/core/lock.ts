@@ -12,7 +12,9 @@ export interface ExecutionLockOptions {
 const DEFAULT_WAIT_MS = 10 * 60_000,
   MAX_BACKOFF_MS = 2_000,
   /** The reclaim guard is held for one read and one unlink; older means its holder died. */
-  ABANDONED_GUARD_MS = 30_000;
+  ABANDONED_GUARD_MS = 30_000,
+  /** An owner writes its record right after creating the lock; unreadable and older, it crashed. */
+  UNREADABLE_LOCK_MS = 30_000;
 const OwnerSchema = z.object({
   pid: z.number().int().positive(),
   host: z.string().optional(),
@@ -68,7 +70,8 @@ async function acquire(path: string, waitMs: number): Promise<FileHandle> {
       throw new ConfigurationError(
         `Another OmniStack execution in this process already owns ${path}; nested runs are not supported.`,
       );
-    if (owner && !ownerMayBeAlive(owner) && (await reclaim(path, raw))) continue;
+    const stale = owner ? !ownerMayBeAlive(owner) : (await ageMs(path)) > UNREADABLE_LOCK_MS;
+    if (stale && (await reclaim(path, raw))) continue;
     const remaining = deadline - Date.now();
     if (remaining <= 0) throw new ConfigurationError(busyMessage(path, owner, waitMs));
     await delay(Math.min(remaining, MAX_BACKOFF_MS, 100 * 2 ** attempt));
@@ -82,7 +85,7 @@ async function readIfPresent(path: string): Promise<string | undefined> {
     throw error;
   }
 }
-/** Empty or malformed content may belong to an owner still writing it, so it is never reclaimed. */
+/** Empty or malformed content may belong to an owner still writing it; see UNREADABLE_LOCK_MS. */
 function parseOwner(raw: string): Owner | undefined {
   try {
     const parsed = OwnerSchema.safeParse(JSON.parse(raw));
@@ -114,11 +117,7 @@ async function reclaim(path: string, stale: string): Promise<boolean> {
     handle = await open(guard, 'wx', 0o600);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
-    const age = await stat(guard).then(
-      (s) => Date.now() - s.mtimeMs,
-      () => 0,
-    );
-    if (age > ABANDONED_GUARD_MS) await rm(guard, { force: true });
+    if ((await ageMs(guard)) > ABANDONED_GUARD_MS) await rm(guard, { force: true });
     return false;
   }
   try {
@@ -128,6 +127,13 @@ async function reclaim(path: string, stale: string): Promise<boolean> {
     await handle.close();
     await rm(guard, { force: true });
   }
+}
+/** Milliseconds since the file was last written; 0 when it no longer exists. */
+async function ageMs(path: string): Promise<number> {
+  return stat(path).then(
+    (s) => Date.now() - s.mtimeMs,
+    () => 0,
+  );
 }
 function busyMessage(path: string, owner: Owner | undefined, waitMs: number): string {
   const who = owner

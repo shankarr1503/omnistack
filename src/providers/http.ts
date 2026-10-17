@@ -62,7 +62,7 @@ const AnthropicResponse = z.object({
   usage: Usage,
   stop_reason: z.string().nullable().optional(),
 });
-/** Catalog checks gate routing, so they get a short budget independent of execution.modelTimeout. */
+/** Catalog checks gate routing, so they get a short budget (execution.healthTimeout), not modelTimeout. */
 export const HEALTH_CHECK_TIMEOUT_MS = 10_000;
 /** Error shapes of OpenAI, Anthropic, Ollama, vLLM and FastAPI-based servers. */
 const ErrorBody = z.union([
@@ -73,14 +73,16 @@ const ErrorBody = z.union([
 ]);
 const DETAIL_LIMIT = 300;
 /** Provider-supplied text made safe for an error message: redacted, one line, bounded. */
-function sanitize(text: string): string {
-  const line = redact(text)
+function sanitize(text: string, key?: string): string {
+  // Providers echo rejected keys back; a key without a recognisable prefix is masked by value.
+  const masked = key && key.length >= 4 ? text.split(key).join('[REDACTED]') : text;
+  const line = redact(masked)
     .replace(/[\p{Cc}\s]+/gu, ' ')
     .trim();
   return line.length > DETAIL_LIMIT ? `${line.slice(0, DETAIL_LIMIT)}…` : line;
 }
 /** The structured error message from a JSON error body; raw text and HTML are never echoed. */
-function errorMessage(body: string): string | undefined {
+function errorMessage(body: string, key?: string): string | undefined {
   let json: unknown;
   try {
     json = JSON.parse(body);
@@ -98,14 +100,14 @@ function errorMessage(body: string): string | undefined {
       : 'message' in data
         ? data.message
         : data.detail;
-  return sanitize(text) || undefined;
+  return sanitize(text, key) || undefined;
 }
 /** Why fetch failed, including the network cause (for example ECONNREFUSED or a TLS error). */
-function connectionFailure(error: unknown): string {
+function connectionFailure(error: unknown, key?: string): string {
   if (!(error instanceof Error)) return 'network error';
   const summary = error.message || error.name;
   const cause: unknown = error.cause;
-  if (!(cause instanceof Error)) return sanitize(summary);
+  if (!(cause instanceof Error)) return sanitize(summary, key);
   const code = 'code' in cause && typeof cause.code === 'string' ? cause.code : '';
   const causes: unknown[] =
     cause instanceof AggregateError ? [cause, ...(cause.errors as unknown[])] : [cause];
@@ -113,7 +115,7 @@ function connectionFailure(error: unknown): string {
     .filter(Boolean)
     .join('; ');
   const detail = code && !text.includes(code) ? (text ? `${code}: ${text}` : code) : text;
-  return sanitize(detail ? `${summary} (${detail})` : summary);
+  return sanitize(detail ? `${summary} (${detail})` : summary, key);
 }
 export class HttpProvider implements ModelProvider {
   readonly id: string;
@@ -123,6 +125,7 @@ export class HttpProvider implements ModelProvider {
     private readonly timeout = 60000,
     private readonly env: NodeJS.ProcessEnv = process.env,
     private readonly transport: typeof fetch = fetch,
+    private readonly healthTimeout = HEALTH_CHECK_TIMEOUT_MS,
   ) {
     this.id = config.id;
     this.local = config.local;
@@ -161,7 +164,7 @@ export class HttpProvider implements ModelProvider {
       if (signal?.aborted) throw signal.reason;
       if (timeout.aborted) throw new TimeoutError();
       throw new ProviderError(
-        `Connection failed for ${this.id}: ${connectionFailure(error)}`,
+        `Connection failed for ${this.id}: ${connectionFailure(error, key)}`,
         true,
       );
     }
@@ -172,7 +175,7 @@ export class HttpProvider implements ModelProvider {
       const text = await response.text();
       if (/context.{0,30}(length|window|limit)|too many tokens/i.test(text.slice(0, 4000)))
         throw new ContextOverflowError();
-      const reason = errorMessage(text);
+      const reason = errorMessage(text, key);
       throw new ProviderError(
         `Provider ${this.id} returned HTTP ${response.status}${reason ? `: ${reason}` : ''}`,
         response.status >= 500,
@@ -197,10 +200,7 @@ export class HttpProvider implements ModelProvider {
     }));
   }
   /** Rejects with the caller's cancellation reason; any other failure reports unhealthy. */
-  async healthCheck(
-    signal?: AbortSignal,
-    timeoutMs = HEALTH_CHECK_TIMEOUT_MS,
-  ): Promise<ProviderHealth> {
+  async healthCheck(signal?: AbortSignal, timeoutMs = this.healthTimeout): Promise<ProviderHealth> {
     const timeout = AbortSignal.timeout(timeoutMs);
     try {
       await this.listModels(signal ? AbortSignal.any([signal, timeout]) : timeout);
