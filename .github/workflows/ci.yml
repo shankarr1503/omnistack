@@ -30,4 +30,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/check-plugin-version.mjs origin/${{ github.base_ref }}
+      - env:
+          BASE_REF: ${{ github.base_ref }}
+        run: node scripts/check-plugin-version.mjs "origin/$BASE_REF"

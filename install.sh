@@ -47,7 +47,8 @@ if [ -n "$project" ]; then
 fi
 
 # Succeeds when the omni plugin is installed for the user (not just for one project)
-# and not disabled in settings.json. Without node, any install that is not disabled counts.
+# and not disabled in settings.json. Without node the scope cannot be read per plugin, so
+# any project or local install in the file means "not sure" and Claude Code is installed.
 plugin_enabled() {
   installed="$1/plugins/installed_plugins.json" settings="$1/settings.json"
   [ -f "$installed" ] || return 1
@@ -61,6 +62,7 @@ plugin_enabled() {
     ' "$installed" "$settings"
   else
     grep -q '"omni@omnistack"' "$installed" &&
+      ! grep -Eq '"scope"[[:space:]]*:[[:space:]]*"(project|local)"' "$installed" &&
       ! grep -Eq '"omni@omnistack"[[:space:]]*:[[:space:]]*false' "$settings" 2>/dev/null
   fi
 }

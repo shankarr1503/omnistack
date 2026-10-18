@@ -209,3 +209,18 @@ test('F11: a wrapper whose line endings an editor converted is preserved, not re
   assert.deepEqual((await uninstallSkills(home, adapters)).preserved, [path]);
   assert.equal(await readFile(path, 'utf8'), crlf);
 });
+
+test('a damaged skill manifest is reported clearly by install and uninstall', async () => {
+  const { home, adapters } = await fixture();
+  await mkdir(join(home, 'state'), { recursive: true });
+  for (const damaged of ['null', '{}', 'not json', '[1]']) {
+    await writeFile(join(home, 'state', 'skills.json'), damaged);
+    for (const action of [
+      () => installSkills(home, adapters),
+      () => uninstallSkills(home, adapters),
+    ])
+      await assert.rejects(action(), /skill manifest .*skills\.json is damaged\. Delete it/);
+  }
+  await rm(join(home, 'state', 'skills.json'));
+  assert.equal((await installSkills(home, adapters)).length, 36, 'works again once deleted');
+});

@@ -8,6 +8,7 @@ import {
   readFile,
   readdir,
   realpath,
+  symlink,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -152,6 +153,49 @@ test(
       assert.equal(result.status, 0, result.stderr);
       assert.doesNotMatch(result.stdout, /skipping Claude Code/, label);
       assert.ok((await skills(dir)).includes('company'), `${label}: Claude Code gets the skills`);
+    }
+  },
+);
+
+test(
+  'install.sh without Node.js skips Claude Code only when no plugin is installed for one project',
+  { skip: process.platform === 'win32' && 'install.sh targets POSIX shells' },
+  async () => {
+    // A PATH with only the tools install.sh uses, so `command -v node` fails and grep decides.
+    const bin = await realpath(await mkdtemp(join(tmpdir(), 'omni-no-node-')));
+    const tools = ['sh', 'mktemp', 'rm', 'dirname', 'basename', 'cp', 'mkdir', 'cmp', 'diff'];
+    for (const tool of [...tools, 'sed', 'grep']) {
+      const found = spawnSync('sh', ['-c', `command -v ${tool}`], {
+        encoding: 'utf8',
+      }).stdout.trim();
+      assert.ok(found.startsWith('/'), `${tool} is installed`);
+      await symlink(found, join(bin, tool));
+    }
+    const run = async (plugins: Record<string, unknown>) => {
+      const dir = await realpath(await mkdtemp(join(tmpdir(), 'omni-no-node-home-')));
+      await mkdir(join(dir, '.claude', 'plugins'), { recursive: true });
+      await writeFile(
+        join(dir, '.claude', 'plugins', 'installed_plugins.json'),
+        JSON.stringify({ version: 2, plugins }, null, 2),
+      );
+      return spawnSync('/bin/sh', [join(root, 'install.sh')], {
+        encoding: 'utf8',
+        env: { PATH: bin, HOME: dir, XDG_CONFIG_HOME: join(dir, 'xdg') },
+      });
+    };
+    const user = await run({ 'omni@omnistack': [{ scope: 'user' }] });
+    assert.equal(user.status, 0, user.stderr);
+    assert.match(user.stdout, /skipping Claude Code/);
+    for (const [label, plugins] of [
+      ['installed for one project only', { 'omni@omnistack': [{ scope: 'project' }] }],
+      [
+        'another plugin installed for a project',
+        { 'omni@omnistack': [{ scope: 'user' }], 'other@elsewhere': [{ scope: 'local' }] },
+      ],
+    ] as const) {
+      const result = await run(plugins);
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /claude: installed/, label);
     }
   },
 );

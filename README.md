@@ -27,7 +27,7 @@ Each skill here encodes what an experienced engineer does instead, as ordered st
 /plugin install omni@omnistack
 ```
 
-To update later: `/plugin marketplace update omnistack`, then `/plugin update omni@omnistack` (or turn on auto-update for the marketplace under `/plugin`). Plugin skills are namespaced: `/omni:root-cause`, `/omni:company`.
+To update later, run `claude plugin marketplace update omnistack` and then `claude plugin update omni@omnistack` in your shell, then `/reload-plugins` in any open session. Or turn on auto-update for the marketplace in the **Marketplaces** tab of `/plugin`. Plugin skills are namespaced: `/omni:root-cause`, `/omni:company`.
 
 **Claude Code, Codex and OpenCode** (one command; installs into every host it finds):
 

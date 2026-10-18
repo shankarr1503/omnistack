@@ -6,7 +6,7 @@ import { parse, stringify } from 'yaml';
 import { z } from 'zod';
 import type { HostAdapter } from '../hosts/adapter.js';
 import { atomicWrite, optionalRead } from '../utils/io.js';
-import { PermissionDeniedError } from '../utils/errors.js';
+import { ConfigurationError, PermissionDeniedError } from '../utils/errors.js';
 export const sourceRoot = fileURLToPath(new URL('../../', import.meta.url));
 const SkillSchema = z.object({
   name: z.string().regex(/^omni(?:-[a-z]+)?$/),
@@ -40,9 +40,24 @@ export function renderSkill(
 function hash(text: string): string {
   return createHash('sha256').update(text).digest('hex');
 }
-interface ManagedFile {
-  path: string;
-  hash: string;
+const ManagedFiles = z.array(z.object({ path: z.string(), hash: z.string() }));
+type ManagedFile = z.infer<typeof ManagedFiles>[number];
+/** The record of wrappers OmniStack wrote. Wrappers are recognized without it, so a damaged one can go. */
+async function readManifest(path: string): Promise<ManagedFile[]> {
+  const text = await optionalRead(path);
+  if (text === undefined) return [];
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    value = undefined;
+  }
+  const parsed = ManagedFiles.safeParse(value);
+  if (!parsed.success)
+    throw new ConfigurationError(
+      `The skill manifest ${path} is damaged. Delete it and run the command again; OmniStack recognizes its own unedited wrappers without it.`,
+    );
+  return parsed.data;
 }
 const RuntimeArguments = z.tuple([
   z.string(),
@@ -110,7 +125,7 @@ export async function installSkillsReport(
   entrypoint = join(sourceRoot, 'dist', 'cli', 'index.js'),
 ): Promise<SkillInstallReport> {
   const manifestPath = join(home, 'state', 'skills.json');
-  const previous = JSON.parse((await optionalRead(manifestPath)) ?? '[]') as ManagedFile[];
+  const previous = await readManifest(manifestPath);
   const skills = await loadSkills(),
     files: { path: string; text: string }[] = [],
     preserved: string[] = [],
@@ -156,7 +171,7 @@ export async function uninstallSkills(
   adapters: HostAdapter[],
 ): Promise<{ removed: string[]; preserved: string[] }> {
   const manifestPath = join(home, 'state', 'skills.json'),
-    manifest = JSON.parse((await optionalRead(manifestPath)) ?? '[]') as ManagedFile[];
+    manifest = await readManifest(manifestPath);
   const allowed = new Set(
     adapters.flatMap((a) =>
       [

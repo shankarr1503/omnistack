@@ -340,6 +340,8 @@ test('provider errors never echo the configured key or a bearer token', async ()
     redact('Authorization: Bearer abcdefghijklmnopqrstuvwxyz'),
     'Authorization: Bearer [REDACTED]',
   );
+  assert.equal(redact('sent Basic dTpw'), 'sent Basic [REDACTED]', 'short credentials too');
+  assert.equal(redact('Basic auth required'), 'Basic auth required', 'prose is left alone');
   assert.equal(
     redact('curl -H "authorization: Basic dXNlcjpwYXNzd29yZA=="'),
     'curl -H "authorization: Basic [REDACTED]"',
