@@ -6,7 +6,7 @@ import type { UnifiedToolCall, UnifiedToolDefinition } from '../providers/types.
 import type { Repository } from '../repository/scanner.js';
 import { scopedPath } from '../repository/boundary.js';
 import { authorize, safeCommand, type Grants } from '../permissions/evaluator.js';
-import { atomicWrite, optionalRead, redact } from '../utils/io.js';
+import { atomicWrite, optionalRead, redact, REDACTION_MARKER } from '../utils/io.js';
 import { execute, git, type CommandResult } from '../utils/process.js';
 import { PermissionDeniedError } from '../utils/errors.js';
 import { invocationContext } from '../hosts/adapter.js';
@@ -41,10 +41,17 @@ export const toolDefinitions: UnifiedToolDefinition[] = Object.entries(schemas).
 export function contentHash(content: string): string {
   return createHash('sha256').update(content).digest('hex');
 }
+function occurrences(text: string, marker: string): number {
+  return text.split(marker).length - 1;
+}
 /** Recovery preimages remain local and never enter provider prompts. */
 export class ToolController {
   readonly journal: { path: string; before: string | null; afterHash: string }[] = [];
   readonly checkpoint: string;
+  /** Secrets masked in model-visible text, by placeholder; writes restore them. */
+  private readonly secrets = new Map<string, string>();
+  private readonly placeholders = new Map<string, string>();
+  private readonly nonce = randomUUID().slice(0, 8);
   constructor(
     readonly repo: Repository,
     readonly home: string,
@@ -69,6 +76,29 @@ export class ToolController {
       throw new PermissionDeniedError('Privacy policy denies access to ' + rel);
     return path;
   }
+  /** Redacts with placeholders unique to this run, so text a model echoes back can be restored. */
+  private mask(text: string): string {
+    return redact(text, (secret) => {
+      let placeholder = this.placeholders.get(secret);
+      if (!placeholder) {
+        placeholder = `${REDACTION_MARKER}-${this.nonce}-${this.secrets.size + 1}]`;
+        this.placeholders.set(secret, placeholder);
+        this.secrets.set(placeholder, secret);
+      }
+      return placeholder;
+    });
+  }
+  private unmask(text: string): string {
+    // A masked value can itself contain an earlier placeholder; restore until nothing changes.
+    for (let previous = ''; previous !== text;) {
+      previous = text;
+      text = text.replace(
+        /\[REDACTED-[0-9a-f]{8}-\d+\]/g,
+        (placeholder) => this.secrets.get(placeholder) ?? placeholder,
+      );
+    }
+    return text;
+  }
   private async read(requested: string): Promise<string> {
     const path = await this.path(requested);
     if ((await stat(path)).size > 256000)
@@ -87,6 +117,10 @@ export class ToolController {
       before = await optionalRead(path);
     if ((before === undefined ? null : contentHash(before)) !== expectedHash)
       throw new PermissionDeniedError('File changed since read; reread before editing');
+    if (occurrences(content, REDACTION_MARKER) > occurrences(before ?? '', REDACTION_MARKER))
+      throw new PermissionDeniedError(
+        'Content contains a redaction placeholder this run cannot restore; keep the original line or write the real value',
+      );
     this.journal.push({
       path: relative(this.repo.root, path),
       before: before ?? null,
@@ -107,21 +141,23 @@ export class ToolController {
       case 'read_file': {
         const a = schemas.read_file.parse(call.arguments),
           text = await this.read(a.path);
-        return { content: redact(text), hash: contentHash(text) };
+        return { content: this.mask(text), hash: contentHash(text) };
       }
       case 'write_file': {
         const a = schemas.write_file.parse(call.arguments);
-        return this.write(a.path, a.content, a.expectedHash);
+        return this.write(a.path, this.unmask(a.content), a.expectedHash);
       }
       case 'edit_file': {
         const a = schemas.edit_file.parse(call.arguments),
-          text = await this.read(a.path);
-        if (text.split(a.oldText).length !== 2)
+          text = await this.read(a.path),
+          oldText = this.unmask(a.oldText),
+          newText = this.unmask(a.newText);
+        if (text.split(oldText).length !== 2)
           throw new PermissionDeniedError('Edit must match exactly once');
         // A replacer function keeps `$&`, `$$` and similar sequences in newText literal.
         return this.write(
           a.path,
-          text.replace(a.oldText, () => a.newText),
+          text.replace(oldText, () => newText),
           contentHash(text),
         );
       }
@@ -145,7 +181,7 @@ export class ToolController {
             const content = await this.read(path);
             content.split('\n').forEach((line, index) => {
               if (line.includes(a.query) && matches.length < 100)
-                matches.push({ path, line: index + 1, text: redact(line.slice(0, 300)) });
+                matches.push({ path, line: index + 1, text: this.mask(line).slice(0, 300) });
             });
           } catch {
             /* Unsafe files are excluded. */
@@ -215,7 +251,7 @@ export class ToolController {
           .then((text) => chunks.push('New or untracked file: ' + file + '\n' + text))
           .catch(() => undefined);
     }
-    return redact(chunks.join('\n').slice(0, 100000));
+    return this.mask(chunks.join('\n')).slice(0, 100000);
   }
   async command(command: string, args: string[]): Promise<CommandResult> {
     authorize('command', this.grants);
