@@ -27,13 +27,16 @@ const CODE_WORDS = new Set(
     ' ',
   ),
 );
+// A quoted value runs to its closing quote; an unquoted (or unterminated) one stops at punctuation.
 const assignment =
-  /((?:api[_-]?key|passw(?:or)?d|secret|token|authorization)["']?\s*[=:]\s*)(["'`]?)((?:bearer|basic)\s+)?([^\s"'`,;(){}[\]<>|&]*)/gi;
+  /((?:api[_-]?key|passw(?:or)?d|secret|token|authorization)["']?\s*[=:]\s*)(?:(["'`])((?:bearer|basic)\s+)?((?:(?!\2)[^\r\n])*)\2|(["'`]?)((?:bearer|basic)\s+)?([^\s"'`,;(){}[\]<>|&]*))/gi;
 function credential(value: string, quoted: boolean, next: string | undefined): boolean {
-  // Calls, generics, indexing and template or environment references are code.
-  if (!value || value.startsWith('$') || (next !== undefined && '([<{'.includes(next)))
+  // `$VAR`, `${...}` and `$(...)` are environment or template references, not credentials.
+  if (!value || /^\$(?:[A-Za-z_{(]|$)/.test(value) || /^\[REDACTED[^\]]*\]$/.test(value))
     return false;
   if (quoted) return true;
+  // Unquoted calls, generics and indexing are code.
+  if (next !== undefined && '([<{'.includes(next)) return false;
   return !CODE_WORDS.has(value.toLowerCase()) && !/^[A-Za-z_$][\w$]*(?:\.[\w$]+)+$/.test(value);
 }
 /**
@@ -57,15 +60,27 @@ export function redact(
       (
         match,
         prefix: string,
-        quote: string,
-        scheme: string | undefined,
-        value: string,
+        closed: string | undefined,
+        closedScheme: string | undefined,
+        closedValue: string | undefined,
+        open: string | undefined,
+        openScheme: string | undefined,
+        openValue: string | undefined,
         offset: number,
         whole: string,
-      ) =>
-        credential(value, !!quote, whole[offset + match.length])
-          ? prefix + quote + (scheme ?? '') + mask(value, 'secret')
-          : match,
+      ) => {
+        const quote = closed ?? open ?? '',
+          value = (closed ? closedValue : openValue) ?? '';
+        if (!credential(value, !!quote, closed ? undefined : whole[offset + match.length]))
+          return match;
+        return (
+          prefix +
+          quote +
+          ((closed ? closedScheme : openScheme) ?? '') +
+          mask(value, 'secret') +
+          (closed ?? '')
+        );
+      },
     );
 }
 export function safeJson(value: unknown): string {

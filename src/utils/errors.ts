@@ -38,7 +38,11 @@ export function refused(error: unknown): boolean {
     error instanceof RateLimitError ||
     error instanceof ModelUnavailableError ||
     error instanceof ContextOverflowError ||
-    (error instanceof ProviderError && error.status !== undefined)
+    // A gateway timeout (504, Cloudflare 524) may hide a reply the model generated and billed.
+    (error instanceof ProviderError &&
+      error.status !== undefined &&
+      error.status !== 504 &&
+      error.status !== 524)
   );
 }
 export class AuthenticationError extends OmniError {

@@ -17,6 +17,7 @@ import {
   RateLimitError,
   AuthenticationError,
   ProviderError,
+  refused,
 } from '../src/utils/errors.js';
 import { redact } from '../src/utils/io.js';
 import { validateGraph, runGraph, mapConcurrent } from '../src/core/task-graph.js';
@@ -386,6 +387,12 @@ test('redaction masks credentials without rewriting ordinary code', () => {
     ['"api_key": "abcd1234efgh"', 'abcd1234efgh'],
     ["client_secret = 's3cr3t-value'", 's3cr3t-value'],
     ['key: sk-ant-abcdefghijklmnop', 'sk-ant-abcdefghijklmnop'],
+    ['password = "ab(cd"', 'ab(cd'],
+    ['password: "ab;cd"', ';cd'],
+    ['password: "$2b$10$abcdefghijk"', '$2b$10$abcdefghijk'],
+    ['password: "correct horse battery"', 'horse'],
+    ['password = "unterminated', 'unterminated'],
+    ["token: 'Bearer abc(def'", 'abc(def'],
   ])
     assert.ok(!redact(text!).includes(secret!), text);
 });
@@ -513,4 +520,7 @@ test('requests the provider refused are not charged; possibly billed failures ar
   );
   const rows = await ledger.read();
   assert.ok((rows.at(-1)?.usage.costUsd ?? 0) > 0);
+  // A gateway timeout means the model may still have generated and billed the reply.
+  for (const status of [504, 524]) assert.ok(!refused(new ProviderError('x', true, status)));
+  assert.ok(refused(new ProviderError('x', true, 503)));
 });

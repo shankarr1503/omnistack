@@ -89,10 +89,15 @@ export class ToolController {
     });
   }
   private unmask(text: string): string {
-    return text.replace(
-      /\[REDACTED-[0-9a-f]{8}-\d+\]/g,
-      (placeholder) => this.secrets.get(placeholder) ?? placeholder,
-    );
+    // A masked value can itself contain an earlier placeholder; restore until nothing changes.
+    for (let previous = ''; previous !== text;) {
+      previous = text;
+      text = text.replace(
+        /\[REDACTED-[0-9a-f]{8}-\d+\]/g,
+        (placeholder) => this.secrets.get(placeholder) ?? placeholder,
+      );
+    }
+    return text;
   }
   private async read(requested: string): Promise<string> {
     const path = await this.path(requested);
