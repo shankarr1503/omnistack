@@ -2,6 +2,10 @@
 
 The skill library (the Claude Code plugin `omni`, also installed by `install.sh`) and the optional runtime (the `omni` CLI) are versioned separately. The plugin version lives in `library/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`; the runtime version in `package.json`.
 
+## Plugin 1.1.2 — unreleased
+
+- `root-cause`: when the bug arrives with a failing test, also add a test that targets the cause, in the code being changed. That test usually checks only the symptom, so the cause stayed unguarded: in a benchmark run the agent fixed the right line but added no test for it. The report gains a `Test:` line, so a missing test is visible.
+
 ## Plugin 1.1.1 — unreleased
 
 - `install.sh` no longer installs a second copy of every skill into Claude Code when the `omni` plugin is installed for the user and enabled (auto-detect mode only; `--claude` and `--project` still install).

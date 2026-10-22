@@ -33,7 +33,7 @@ Write down, in one or two sentences: _"X happens because Y, at file:line."_ Then
 
 ## 4. Fix
 
-- Write a failing test that captures the bug **first** (it must fail for the right reason).
+- Write a failing test that captures the bug **first** (it must fail for the right reason). A failing test you were handed usually checks the symptom; also add one that targets the cause, in the code you change, so the bug cannot return through another caller.
 - Fix the cause, not the symptom. Wrapping the crash in `try/catch`, adding a null check where the value should never be null, retrying a deterministic failure, or bumping a timeout are symptom fixes — reject them unless you can justify why the symptom _is_ the bug.
 - Keep the fix minimal. Refactors go in a separate change.
 - Look for siblings: grep for the same pattern elsewhere. The same mistake is usually made more than once.
@@ -56,6 +56,7 @@ Repro:     <command>
 Cause:     <one or two sentences, file:line>
 Evidence:  <what you ran that proves it>
 Fix:       <what changed and why it addresses the cause>
+Test:      <the test you added for the cause, and how it failed before the fix>
 Verified:  <tests/commands run and their results>
 Ruled out: <hypotheses eliminated>
 ```
