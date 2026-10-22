@@ -22,9 +22,24 @@ export class OmniError extends Error {
   }
 }
 export class ProviderError extends OmniError {
-  constructor(message: string, retryable = false) {
+  /** `status` is set when the provider answered with an HTTP error instead of generating. */
+  constructor(
+    message: string,
+    retryable = false,
+    readonly status?: number,
+  ) {
     super('PROVIDER', message, retryable);
   }
+}
+/** True when the provider refused the request outright, so it generated and billed nothing. */
+export function refused(error: unknown): boolean {
+  return (
+    error instanceof AuthenticationError ||
+    error instanceof RateLimitError ||
+    error instanceof ModelUnavailableError ||
+    error instanceof ContextOverflowError ||
+    (error instanceof ProviderError && error.status !== undefined)
+  );
 }
 export class AuthenticationError extends OmniError {
   constructor(message = 'Provider authentication failed') {

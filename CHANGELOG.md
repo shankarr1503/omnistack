@@ -6,6 +6,8 @@
 - `bench/tasks/company-tasks`: a feature task graded with hidden acceptance tests, used to compare company mode with a single agent.
 - Zero-setup skill library (`library/skills`): 16 standalone engineering skills for Claude Code, Codex and OpenCode, installable as a Claude Code plugin (`/plugin marketplace add shankarr1503/omnistack`) or with `install.sh`. CI validates every skill.
 - Fixed: review diffs covered only the first 100 repository files; `edit_file` interpreted `$&`/`$$` in replacement text; non-normalised written paths were missing from review diffs.
+- Fixed: redaction rewrote ordinary code (`token: string`, `secret = load()`) and let `write_file` save `[REDACTED]` over real secrets, while leaking the token after `Authorization: Bearer`. Tool reads now use per-run placeholders that writes and edits restore, and writes that would add an unrestorable placeholder are refused.
+- Fixed: budget estimates counted four tokens per character instead of roughly a quarter token, and calls the provider refused (401, 429, HTTP errors) were charged their full estimate to task and daily budgets. Refusals now cost nothing; timeouts and lost replies are still charged conservatively.
 - Common credential files (`.netrc`, `.npmrc`, `.pypirc`, `.docker/config.json`, keystores, Terraform state) are outside tool scope.
 
 ## 0.1.0 — unreleased

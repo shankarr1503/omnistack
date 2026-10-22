@@ -10,9 +10,15 @@ import { permitsModel, globMatches } from '../src/privacy/evaluator.js';
 import { MockProvider, mockResponse } from '../src/providers/mock.js';
 import { ModelRegistry } from '../src/registry/model-registry.js';
 import { AgentRuntime } from '../src/agents/runtime.js';
-import { Budget } from '../src/telemetry/ledger.js';
+import { Budget, Ledger } from '../src/telemetry/ledger.js';
 import { council, anonymize } from '../src/council/council.js';
-import { ContextOverflowError, RateLimitError, AuthenticationError } from '../src/utils/errors.js';
+import {
+  ContextOverflowError,
+  RateLimitError,
+  AuthenticationError,
+  ProviderError,
+} from '../src/utils/errors.js';
+import { redact } from '../src/utils/io.js';
 import { validateGraph, runGraph, mapConcurrent } from '../src/core/task-graph.js';
 import { authorize, safeCommand } from '../src/permissions/evaluator.js';
 import { ToolController, contentHash } from '../src/tools/controller.js';
@@ -187,7 +193,7 @@ test('runtime enforces timeout and cancellation even for uncooperative plugins',
   );
 });
 test('hard budgets fail closed on unknown pricing and concurrent reservations', () => {
-  const config = ConfigSchema.parse({ budget: { taskUsd: 0.02 } }),
+  const config = ConfigSchema.parse({ budget: { taskUsd: 0.015 } }),
     budget = new Budget(config),
     model = { id: 'x', provider: 'p', capabilities: [], local: false };
   assert.throws(() => budget.reserve(model, 100), /pricing/);
@@ -358,4 +364,153 @@ test('worktrees isolate changes and refuse dirty removal', async () => {
   await writeFile(join(tree.path, 'README.md'), 'base');
   await manager.remove(tree.path);
   await assert.rejects(manager.remove(root), /managed/);
+});
+test('redaction masks credentials without rewriting ordinary code', () => {
+  for (const code of [
+    'interface Session { token: string; password: string }',
+    'const secret = loadSecret(env);',
+    'headers: { Authorization: `Bearer ${apiKey}` }',
+    'export const authorization = (req) => req.user;',
+    'password: z.string().min(8),',
+    'const token = await getToken();',
+    'token: this.session.token,',
+    'def login(password: str) -> None:',
+    'api_key: ${{ secrets.API_KEY }}',
+  ])
+    assert.equal(redact(code), code);
+  for (const [text, secret] of [
+    ['Authorization: Bearer abc123realtoken999', 'abc123realtoken999'],
+    ['curl -H "Authorization: Basic dXNlcjpwYXNz"', 'dXNlcjpwYXNz'],
+    ['DB_PASSWORD=hunter2', 'hunter2'],
+    ['password: hunter2', 'hunter2'],
+    ['"api_key": "abcd1234efgh"', 'abcd1234efgh'],
+    ["client_secret = 's3cr3t-value'", 's3cr3t-value'],
+    ['key: sk-ant-abcdefghijklmnop', 'sk-ant-abcdefghijklmnop'],
+  ])
+    assert.ok(!redact(text!).includes(secret!), text);
+});
+test('tool writes restore masked secrets instead of writing placeholders', async () => {
+  const root = await repo(),
+    secret = 'sk-live1234567890abcdef',
+    original = `export const config = {\n  apiKey: "${secret}",\n  retries: 1,\n};\n`;
+  await writeFile(join(root, 'config.ts'), original);
+  const controller = new ToolController(await scanRepository(root), await temp(), {
+    write: true,
+    commands: false,
+    approvalMode: 'balanced',
+  });
+  const read = async () =>
+    (await controller.call({ id: 'r', name: 'read_file', arguments: { path: 'config.ts' } })) as {
+      content: string;
+      hash: string;
+    };
+  const first = await read();
+  assert.ok(!first.content.includes(secret));
+  // A model rewriting the whole file from what it saw must not destroy the secret.
+  await controller.call({
+    id: '1',
+    name: 'write_file',
+    arguments: {
+      path: 'config.ts',
+      content: first.content.replace('retries: 1', 'retries: 3'),
+      expectedHash: first.hash,
+    },
+  });
+  assert.equal(
+    await readFile(join(root, 'config.ts'), 'utf8'),
+    original.replace('retries: 1', 'retries: 3'),
+  );
+  // An edit whose context spans a masked line still matches the real file.
+  const masked = (await read()).content.split('\n')[1]!;
+  await controller.call({
+    id: '2',
+    name: 'edit_file',
+    arguments: {
+      path: 'config.ts',
+      oldText: masked + '\n  retries: 3',
+      newText: masked + '\n  retries: 5',
+    },
+  });
+  assert.equal(
+    await readFile(join(root, 'config.ts'), 'utf8'),
+    original.replace('retries: 1', 'retries: 5'),
+  );
+  assert.ok(
+    !JSON.stringify(await controller.call({ id: '3', name: 'git_diff', arguments: {} })).includes(
+      secret,
+    ),
+  );
+  // A placeholder that cannot be restored is refused rather than written into the file.
+  await assert.rejects(
+    controller.call({
+      id: '4',
+      name: 'write_file',
+      arguments: { path: 'other.ts', content: 'const token = "[REDACTED]";\n', expectedHash: null },
+    }),
+    /redact/i,
+  );
+});
+test('budget estimates count tokens, not characters', () => {
+  const config = ConfigSchema.parse({
+    budget: { taskUsd: 0.5 },
+    execution: { maxOutputTokens: 8192 },
+  });
+  const model = {
+    id: 'x',
+    provider: 'p',
+    capabilities: [],
+    local: false,
+    inputUsdPerMillion: 3,
+    outputUsdPerMillion: 15,
+  };
+  // 100k characters is roughly 25k tokens: about $0.20 here, well inside $0.50.
+  new Budget(config).reserve(model, 100_000);
+});
+test('requests the provider refused are not charged; possibly billed failures are', async () => {
+  const priced = {
+    id: 'p-model',
+    provider: 'p',
+    local: false,
+    capabilities: ['coding'],
+    inputUsdPerMillion: 3,
+    outputUsdPerMillion: 15,
+  };
+  const config = ConfigSchema.parse({
+    execution: { retries: 1, maxOutputTokens: 1024 },
+    budget: { taskUsd: 0.05 },
+  });
+  const home = await temp(),
+    ledger = new Ledger(home),
+    registry = new ModelRegistry(),
+    provider = new MockProvider('p', [
+      new RateLimitError(),
+      new AuthenticationError(),
+      new ProviderError('Provider p returned HTTP 503', true, 503),
+      mockResponse('ok'),
+    ]);
+  registry.register(provider, [priced]);
+  const runtime = new AgentRuntime(registry, config, new Budget(config), ledger, home);
+  await assert.rejects(runtime.generate([priced], [{ role: 'user', content: 'hi' }]));
+  // Each reservation is about $0.028; charging the refusals would exhaust the $0.05 task budget.
+  const { response } = await runtime.generate([priced], [{ role: 'user', content: 'hi' }]);
+  assert.equal(response.content, 'ok');
+  const failed = (await ledger.read()).filter((r) => r.status === 'failed');
+  assert.deepEqual(
+    failed.map((r) => r.usage.costUsd),
+    [0, 0, 0],
+  );
+  const lost = new MockProvider('lost', [new ProviderError('Connection failed for lost', true)]),
+    lostModel = { ...priced, id: 'lost-model', provider: 'lost' };
+  registry.register(lost, [lostModel]);
+  await assert.rejects(
+    new AgentRuntime(
+      registry,
+      ConfigSchema.parse({ execution: { retries: 0, maxOutputTokens: 1024 } }),
+      new Budget(config),
+      ledger,
+      home,
+    ).generate([lostModel], [{ role: 'user', content: 'hi' }]),
+  );
+  const rows = await ledger.read();
+  assert.ok((rows.at(-1)?.usage.costUsd ?? 0) > 0);
 });

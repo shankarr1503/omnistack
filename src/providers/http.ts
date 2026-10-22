@@ -115,6 +115,7 @@ export class HttpProvider implements ModelProvider {
       throw new ProviderError(
         `Provider ${this.id} returned HTTP ${response.status}`,
         response.status >= 500,
+        response.status,
       );
     }
     try {

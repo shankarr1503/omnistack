@@ -8,9 +8,15 @@ import type {
   UnifiedToolDefinition,
 } from '../providers/types.js';
 import type { ModelRegistry } from '../registry/model-registry.js';
-import { OmniError, ContextOverflowError, ProviderError, TimeoutError } from '../utils/errors.js';
+import {
+  OmniError,
+  ContextOverflowError,
+  ProviderError,
+  TimeoutError,
+  refused,
+} from '../utils/errors.js';
 import { parseOutput, schemaInstruction } from '../core/schemas.js';
-import { Budget, Ledger, repositoryKey } from '../telemetry/ledger.js';
+import { Budget, Ledger, estimateCostUsd, repositoryKey } from '../telemetry/ledger.js';
 export interface AgentDefinition {
   role: string;
   objective: string;
@@ -76,11 +82,9 @@ export class AgentRuntime {
         reduced = false;
       for (let attempt = 0; attempt <= this.config.execution.retries; attempt++) {
         signal?.throwIfAborted();
-        const started = Date.now();
-        const settle = this.budget.reserve(
-          model,
-          JSON.stringify(context).length + JSON.stringify(tools).length,
-        );
+        const started = Date.now(),
+          inputChars = JSON.stringify(context).length + JSON.stringify(tools).length;
+        const settle = this.budget.reserve(model, inputChars);
         try {
           const provider = this.registry.providers.get(model.provider);
           if (!provider) throw new ProviderError('Provider is not registered');
@@ -122,18 +126,14 @@ export class AgentRuntime {
             });
           return { response, model };
         } catch (error) {
-          settle();
+          // A refusal costs nothing; a lost or malformed reply may still have been billed.
+          const costUsd = refused(error)
+            ? 0
+            : estimateCostUsd(model, inputChars, this.config.execution.maxOutputTokens);
+          settle({ inputTokens: 0, outputTokens: 0, costUsd });
           last = error;
           signal?.throwIfAborted();
           if (this.config.telemetry && this.ledger) {
-            const known =
-              model.inputUsdPerMillion !== undefined && model.outputUsdPerMillion !== undefined;
-            const costUsd = known
-              ? ((JSON.stringify(context).length * 4 + JSON.stringify(tools).length * 4 + 4096) *
-                  model.inputUsdPerMillion! +
-                  this.config.execution.maxOutputTokens * model.outputUsdPerMillion!) /
-                1e6
-              : undefined;
             await this.ledger.record({
               at: new Date().toISOString(),
               provider: model.provider,
