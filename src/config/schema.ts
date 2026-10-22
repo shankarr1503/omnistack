@@ -72,6 +72,7 @@ export const ConfigSchema = z
       .object({
         maxParallelModels: z.number().int().min(1).max(8).default(3),
         modelTimeout: z.number().int().min(10).max(600_000).default(60_000),
+        healthTimeout: z.number().int().min(10).max(600_000).default(10_000),
         toolTimeout: z.number().int().min(10).max(600_000).default(120_000),
         retries: z.number().int().min(0).max(5).default(2),
         repairLimit: z.number().int().min(0).max(5).default(2),
@@ -82,6 +83,7 @@ export const ConfigSchema = z
       .default({
         maxParallelModels: 3,
         modelTimeout: 60000,
+        healthTimeout: 10000,
         toolTimeout: 120000,
         retries: 2,
         repairLimit: 2,

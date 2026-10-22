@@ -9,6 +9,15 @@ Skills in `library/skills/` are standalone Markdown and need no runtime. To prop
 3. Try it on 3–5 real prompts in at least one host, and describe those runs in your pull request (what you asked, what the agent did with and without the skill).
 4. Add it to the skills table in `README.md` and run `npm test`; `tests/library.test.ts` validates every skill.
 
+## Releasing plugin changes
+
+Installed Claude Code plugins only update when the plugin's version goes up, so every pull request that changes anything under `library/` must:
+
+1. Raise `version` in both `library/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` (patch for fixes and wording, minor for new skills or roles, major for removals or renames). `tests/library.test.ts` checks the two match, and CI (`scripts/check-plugin-version.mjs`) fails a `library/` change whose version did not go up.
+2. Add an entry under that version in `CHANGELOG.md`.
+
+After merging, tag the release (`plugin-v<version>`) and publish a GitHub release from its CHANGELOG section. The runtime (`package.json`) is versioned separately.
+
 Improvements to existing skills are welcome. Show a case where the current skill led the agent astray.
 
 ## Changing the company roles

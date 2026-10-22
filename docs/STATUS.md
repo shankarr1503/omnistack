@@ -19,19 +19,19 @@
 
 This is a substantial initial implementation, not a declaration that every item in the product vision is complete.
 
-- Independent GitHub repository created at https://github.com/shankarr1503/omnistack. npm publication and name availability remain unverified.
-- Windows tests run locally. Linux/macOS CI is configured but has not run here. Interactive Claude/Codex/OpenCode sessions and live API inference have not been exercised.
+- Independent GitHub repository at https://github.com/shankarr1503/omnistack. The runtime is not published to npm, and the unscoped npm name `omnistack` belongs to an unrelated package, so publishing needs a different (for example scoped) name.
+- CI runs typecheck, lint, the full test suite, build and `npm pack` on Ubuntu, macOS and Windows with Node 22 and 24, and is green on main. The skill library and plugin have been exercised in real Claude Code sessions (see bench/README.md). The runtime's interactive host sessions and live API inference against real providers have not been exercised.
 - Native Google/AWS/Azure identity adapters, wire streaming and complete multimodal content are future work.
 - Research uses repository context and model knowledge; live browser/MCP research requires an embedding integration.
 - DAG and worktree facilities are reusable SDK components; the default implementation worker edits serially. Automatic concurrent worktree integration is not enabled.
 - Retrieval ranks paths/instruction files, then caps context. Full AST/LSP/dependency graphs and large-monorepo indexing remain future work.
 - Installer updates preserve unrelated files but are not a single multi-file filesystem transaction. A power loss during registration may require inspection of the manifest and generated wrapper.
-- The command controller is an authorization layer, not an OS sandbox. Repository scripts can run arbitrary code once approved. Subprocess tree termination and adversarial concurrent filesystem mutation need stronger platform isolation before hostile-repository certification.
+- The command controller is an authorization layer, not an OS sandbox. Repository scripts can run arbitrary code once approved. On Linux and macOS a timed-out or cancelled command's whole process group receives SIGTERM; on Windows only the direct child is signalled. There is no SIGKILL escalation, so a process that ignores SIGTERM or leaves its group keeps running. Adversarial concurrent filesystem mutation also needs stronger platform isolation before hostile-repository certification.
 - Glob privacy and heuristic redaction cannot prove that public files contain no copied secrets or sensitive data. Models' prose can still reveal self-identities beyond known identity tokens.
 - Local budgets are conservative estimates based on configured prices. Provider billing remains authoritative; vendor-specific hidden/cached tokens and third-party extensions need additional accounting tests.
-- Uninstall removes owned registrations; npm removes its own package. Checkout/user data removal is deliberately manual.
+- Uninstall removes owned registrations. The runtime is not published to npm, so its checkout and user data are removed by hand, deliberately.
 - Parallel executions sharing one global home are serialized to protect budget accounting. Remote/distributed ledgers are not implemented.
 
 ## Highest-priority next work
 
-Run the OS CI matrix and interactive host smoke tests, exercise real provider fixtures for account-specific models, add process-tree/container isolation, then complete durable installer transactions and production release signing. See SECURITY.md before executing untrusted repository scripts.
+Run interactive host smoke tests, exercise real provider fixtures for account-specific models, add process-tree/container isolation, then complete durable installer transactions and production release signing. See SECURITY.md before executing untrusted repository scripts.

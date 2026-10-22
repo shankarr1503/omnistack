@@ -46,11 +46,44 @@ if [ -n "$project" ]; then
   opencode_dir="$project/.opencode/skills"
 fi
 
+# Succeeds when the omni plugin is installed for the user (not just for one project)
+# and not disabled in settings.json. Without node the scope cannot be read per plugin, so
+# any project or local install in the file means "not sure" and Claude Code is installed.
+plugin_enabled() {
+  installed="$1/plugins/installed_plugins.json" settings="$1/settings.json"
+  [ -f "$installed" ] || return 1
+  if command -v node >/dev/null 2>&1; then
+    node -e '
+      const read = (p) => { try { return JSON.parse(require("fs").readFileSync(p, "utf8")); } catch { return {}; } };
+      const entry = (read(process.argv[1]).plugins || {})["omni@omnistack"];
+      const scopes = (Array.isArray(entry) ? entry : entry ? [entry] : []).map((e) => (e && e.scope) || "user");
+      const enabled = (read(process.argv[2]).enabledPlugins || {})["omni@omnistack"] !== false;
+      process.exit(scopes.includes("user") && enabled ? 0 : 1);
+    ' "$installed" "$settings"
+  else
+    grep -q '"omni@omnistack"' "$installed" &&
+      ! grep -Eq '"scope"[[:space:]]*:[[:space:]]*"(project|local)"' "$installed" &&
+      ! grep -Eq '"omni@omnistack"[[:space:]]*:[[:space:]]*false' "$settings" 2>/dev/null
+  fi
+}
+
 if [ -z "$hosts" ]; then
-  [ -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}" ] && hosts="$hosts claude"
+  claude_home="${CLAUDE_CONFIG_DIR:-$HOME/.claude}" plugin_installed=0
+  # The Claude Code plugin already provides these skills as omni:<name>; a second copy
+  # would load every skill twice, so auto-detection leaves Claude Code to the plugin.
+  # A --project install is for everyone who opens the project, so it never skips.
+  if [ "$uninstall" -eq 0 ] && [ -z "$project" ] && plugin_enabled "$claude_home"; then
+    plugin_installed=1
+    echo "claude: the omni plugin is installed; skipping Claude Code (pass --claude to install anyway)"
+  elif [ -d "$claude_home" ]; then
+    hosts="$hosts claude"
+  fi
   { [ -d "$HOME/.codex" ] || [ -d "$HOME/.agents" ]; } && hosts="$hosts codex"
   [ -d "${XDG_CONFIG_HOME:-$HOME/.config}/opencode" ] && hosts="$hosts opencode"
-  [ -n "$hosts" ] || hosts="claude"
+  if [ -z "$hosts" ]; then
+    [ "$plugin_installed" -eq 1 ] && exit 0
+    hosts="claude"
+  fi
 fi
 
 # Company roles become Claude Code subagents named omni-<role>, so they cannot

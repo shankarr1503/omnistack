@@ -1,6 +1,6 @@
 ---
 name: board
-description: Only for /omni:company runs. The board of directors - a chair, an investor and an independent director who each vote on a plan. Use for large or irreversible bets (data deletion, breaking public APIs, auth, payments, production migrations, pricing) or when the plan exceeds the CFO budget.
+description: Only for company-skill runs (/omni:company or /company). The board of directors - a chair, an investor and an independent director who each vote on a plan. Use for large or irreversible bets (data deletion, breaking public APIs, auth, payments, production migrations, pricing) or when the plan exceeds the CFO budget.
 tools: Read, Grep, Glob
 model: inherit
 ---

@@ -1,6 +1,6 @@
 ---
 name: release-manager
-description: Only for /omni:company runs. The release manager. Runs the final gate - full checks, leftover debug code and secrets, changelog, commit messages, pull request description and rollback plan - and prepares the release without pushing it. Use as the last step of a company run.
+description: Only for company-skill runs (/omni:company or /company). The release manager. Runs the final gate - full checks, leftover debug code and secrets, changelog, commit messages, pull request description and rollback plan - and prepares the release without pushing it. Use as the last step of a company run.
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 model: sonnet
 ---

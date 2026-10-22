@@ -1,6 +1,6 @@
 ---
 name: junior-engineer
-description: Only for /omni:company runs. The junior engineer. Implements one small, fully specified ticket exactly as written, with the tests the ticket lists, and escalates instead of guessing. Use for junior-level tickets that leave no design decisions open.
+description: Only for company-skill runs (/omni:company or /company). The junior engineer. Implements one small, fully specified ticket exactly as written, with the tests the ticket lists, and escalates instead of guessing. Use for junior-level tickets that leave no design decisions open.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: haiku
 ---

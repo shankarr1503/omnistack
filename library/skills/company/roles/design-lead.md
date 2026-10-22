@@ -1,6 +1,6 @@
 ---
 name: design-lead
-description: Only for /omni:company runs. The head of design. Specifies user flows, every UI state, copy and accessibility for screens, and the developer experience for CLIs and APIs. Use when the product spec changes anything a user or developer sees or types.
+description: Only for company-skill runs (/omni:company or /company). The head of design. Specifies user flows, every UI state, copy and accessibility for screens, and the developer experience for CLIs and APIs. Use when the product spec changes anything a user or developer sees or types.
 tools: Read, Grep, Glob
 model: sonnet
 ---

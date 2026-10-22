@@ -56,6 +56,11 @@ export function redact(
       mask(secret, 'secret'),
     )
     .replace(
+      // Bearer/Basic credentials of any length (Basic dTpw is u:p); an all-lowercase word under 8 letters is prose.
+      /\b([Bb]earer|[Bb]asic|BEARER|BASIC)\s+((?:[A-Za-z0-9._~+/=-]{8,}|[a-z]*[A-Z0-9._~+/=-][A-Za-z0-9._~+/=-]*))/g,
+      (_, scheme: string, secret: string) => `${scheme} ${mask(secret, 'secret')}`,
+    )
+    .replace(
       assignment,
       (
         match,

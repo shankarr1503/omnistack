@@ -1,6 +1,6 @@
 ---
 name: senior-engineer
-description: Only for /omni:company runs. The senior engineer. Implements one ticket end to end inside the files it owns - tests first, real verification, a precise report - while other engineers work on other tickets at the same time. Use for each senior-level ticket in a wave.
+description: Only for company-skill runs (/omni:company or /company). The senior engineer. Implements one ticket end to end inside the files it owns - tests first, real verification, a precise report - while other engineers work on other tickets at the same time. Use for each senior-level ticket in a wave.
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 model: sonnet
 ---

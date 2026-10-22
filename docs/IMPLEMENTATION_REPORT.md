@@ -1,5 +1,7 @@
 # Implementation report
 
+> Historical snapshot of the runtime's first implementation. Test counts and remaining work below are from that time; see [STATUS.md](STATUS.md) for the current state.
+
 The workspace was empty and not a Git repository. No existing application files were replaced. OmniStack now has its own repository: https://github.com/shankarr1503/omnistack.
 
 ## Phase 1 — foundation

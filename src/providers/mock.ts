@@ -28,7 +28,8 @@ export class MockProvider implements ModelProvider {
       },
     ];
   }
-  async healthCheck(): Promise<ProviderHealth> {
+  async healthCheck(signal?: AbortSignal): Promise<ProviderHealth> {
+    signal?.throwIfAborted();
     return {
       provider: this.id,
       healthy: true,

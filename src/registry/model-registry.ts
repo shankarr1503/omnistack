@@ -16,7 +16,13 @@ export class ModelRegistry {
     const registry = new ModelRegistry();
     for (const p of config.providers)
       registry.register(
-        new HttpProvider(p, config.execution.modelTimeout),
+        new HttpProvider(
+          p,
+          config.execution.modelTimeout,
+          process.env,
+          fetch,
+          config.execution.healthTimeout,
+        ),
         p.models.map((m) => ({ ...m, provider: p.id, local: p.local })),
       );
     return registry;
@@ -60,7 +66,15 @@ export class ModelRegistry {
     }
     return { models: [...this.models.values()], warnings };
   }
-  async health(): Promise<ProviderHealth[]> {
-    return Promise.all([...this.providers.values()].map((p) => p.healthCheck()));
+  /** Cancellation wins even over providers that ignore the signal. */
+  async health(signal?: AbortSignal): Promise<ProviderHealth[]> {
+    signal?.throwIfAborted();
+    const checks = Promise.all([...this.providers.values()].map((p) => p.healthCheck(signal)));
+    if (!signal) return checks;
+    return new Promise<ProviderHealth[]>((resolve, reject) => {
+      const aborted = (): void => reject(signal.reason);
+      signal.addEventListener('abort', aborted, { once: true });
+      checks.then(resolve, reject).finally(() => signal.removeEventListener('abort', aborted));
+    });
   }
 }

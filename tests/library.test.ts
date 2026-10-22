@@ -107,7 +107,7 @@ test('company roles are valid Claude Code subagents', async () => {
       assert.ok(!tools.includes('Edit') && !tools.includes('Write'), `${role}: must be read-only`);
     const description = String(meta.description);
     // Plugin agents are offered in every session; scope them so they are not picked for other work.
-    assert.match(description, /^Only for \/omni:company runs\./, `${role}: scope to company runs`);
+    assert.match(description, /^Only for company-skill runs\b/, `${role}: scope to company runs`);
     assert.ok(description.length >= 80 && description.length <= 400, `${role}: description length`);
     assert.match(
       description,

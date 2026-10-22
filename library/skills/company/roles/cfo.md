@@ -1,6 +1,6 @@
 ---
 name: cfo
-description: Only for /omni:company runs. The CFO. Sets the run's budget - mode, team size, model tier per role and stop-loss rules - and cuts the ticket plan when it costs more than it is worth. Use before engineers start and whenever a run is going over budget.
+description: Only for company-skill runs (/omni:company or /company). The CFO. Sets the run's budget - mode, team size, model tier per role and stop-loss rules - and cuts the ticket plan when it costs more than it is worth. Use before engineers start and whenever a run is going over budget.
 tools: Read, Grep, Glob
 model: sonnet
 ---
