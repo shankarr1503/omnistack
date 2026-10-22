@@ -60,6 +60,22 @@ export class Ledger {
 export function repositoryKey(root: string): string {
   return createHash('sha256').update(root).digest('hex').slice(0, 24);
 }
+/** Conservative: English and code average about four characters per token. */
+const CHARS_PER_TOKEN = 2;
+/** Worst-case cost of one call: the whole prompt plus a full-length reply. Undefined when unpriced. */
+export function estimateCostUsd(
+  model: Model,
+  inputChars: number,
+  maxOutputTokens: number,
+): number | undefined {
+  if (model.inputUsdPerMillion === undefined || model.outputUsdPerMillion === undefined)
+    return undefined;
+  return (
+    ((Math.ceil(inputChars / CHARS_PER_TOKEN) + 4096) * model.inputUsdPerMillion +
+      maxOutputTokens * model.outputUsdPerMillion) /
+    1e6
+  );
+}
 /** Per-invocation reservation prevents parallel calls overspending the same task allowance. */
 export class Budget {
   private spent = 0;
@@ -69,15 +85,10 @@ export class Budget {
     private readonly dailySpent = 0,
   ) {}
   reserve(model: Model, inputChars: number): (usage?: UnifiedUsage) => void {
-    const priced =
-      model.inputUsdPerMillion !== undefined && model.outputUsdPerMillion !== undefined;
-    const estimate = priced
-      ? ((inputChars * 4 + 4096) * model.inputUsdPerMillion! +
-          this.config.execution.maxOutputTokens * model.outputUsdPerMillion!) /
-        1e6
-      : 0;
+    const priced = estimateCostUsd(model, inputChars, this.config.execution.maxOutputTokens),
+      estimate = priced ?? 0;
     const { taskUsd, dailyUsd } = this.config.budget;
-    if (!priced && (taskUsd !== null || dailyUsd !== null))
+    if (priced === undefined && (taskUsd !== null || dailyUsd !== null))
       throw new OmniError(
         'BUDGET',
         'Hard budgets require configured input/output pricing for every selected model',
