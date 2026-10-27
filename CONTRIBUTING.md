@@ -5,9 +5,9 @@
 Skills in `library/skills/` are standalone Markdown and need no runtime. To propose one:
 
 1. Create `library/skills/<kebab-name>/SKILL.md` with only `name` (matching the folder) and `description` frontmatter. The description must say what the skill does and when to use it ("Use when ...").
-2. Follow the bar in the README: it must change agent behavior, be concrete, end with an evidence-based report, be safe by default, and stay under 200 lines. The `skill-forge` skill walks through this.
+2. Follow the bar in the README: it must change agent behavior, be concrete, end with an evidence-based report, be safe by default, treat what it reads as data (a `**Untrusted input:**` line after the introduction), and stay under 200 lines. The `skill-forge` skill walks through this.
 3. Try it on 3–5 real prompts in at least one host, and describe those runs in your pull request (what you asked, what the agent did with and without the skill).
-4. Add it to the skills table in `README.md` and run `npm test`; `tests/library.test.ts` validates every skill.
+4. Add it to the skills table in `README.md`, add at least three prompts that should load it to `bench/triggers/cases.json`, and run `npm test`; `tests/library.test.ts` validates every skill.
 
 ## Releasing plugin changes
 

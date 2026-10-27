@@ -233,3 +233,66 @@ test('the triggering eval reads loaded skills from the stream', async () => {
   assert.equal(judge({ expect: null }, ['root-cause']), false);
   assert.equal(judge({ expect: null }, []), true);
 });
+// Everything an agent reads from a skill must be visible to the person reviewing it.
+async function markdownFiles(dir: string): Promise<string[]> {
+  const files: string[] = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) files.push(...(await markdownFiles(path)));
+    else if (entry.name.endsWith('.md')) files.push(path);
+  }
+  return files;
+}
+test('skills hide nothing and never fetch or run remote code', async () => {
+  const files = [...(await markdownFiles(library)), ...(await markdownFiles(join(root, 'skills')))];
+  assert.ok(files.length > 40, 'expected every skill, role and the playbook');
+  // Zero-width, bidirectional-override and Unicode tag characters can smuggle text past a reviewer.
+  const hidden =
+    /[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]|[\u{E0000}-\u{E007F}]/u;
+  const risky =
+    /--force\b(?!-with-lease)|--no-verify|\brm -rf\b|reset --hard|git clean -[a-z]*f|\bDROP (TABLE|COLUMN|DATABASE)\b/;
+  const forbidding = /\b(never|not|no|don't|without|only|unless|refuse|reject)\b/i;
+  for (const file of files) {
+    const name = file.slice(root.length);
+    const text = await readFile(file, 'utf8');
+    assert.doesNotMatch(text, hidden, `${name}: invisible or bidirectional characters`);
+    assert.doesNotMatch(text, /<!--/, `${name}: HTML comments are hidden when rendered`);
+    assert.doesNotMatch(
+      text,
+      /https?:\/\//,
+      `${name}: skills must not send agents to remote content`,
+    );
+    assert.doesNotMatch(
+      text,
+      /\b(curl|wget)\b[^\n]*\|\s*(sudo\s+)?(ba|z)?sh\b/,
+      `${name}: never pipe a download into a shell`,
+    );
+    for (const line of text.split('\n'))
+      if (risky.test(line))
+        assert.match(
+          line,
+          forbidding,
+          `${name}: destructive command outside a prohibition: ${line}`,
+        );
+  }
+});
+test('every skill and role treats what it reads as data', async () => {
+  const names = (await readdir(library, { withFileTypes: true }))
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+  for (const name of names)
+    assert.match(
+      await readFile(join(library, name, 'SKILL.md'), 'utf8'),
+      /^\*\*Untrusted input:\*\* /m,
+      `${name}: say which inputs are data, not instructions`,
+    );
+  for (const { role, body, meta } of await roles()) {
+    assert.match(body, /\*\*Untrusted input:\*\* /, `${role}: say which inputs are data`);
+    // Bash can write files, so a read-only role gets it only to run checks, and its brief forbids edits.
+    const tools = String(meta.tools).split(/,\s*/);
+    if (readOnlyRoles.includes(role) && tools.includes('Bash')) {
+      assert.ok(['cso', 'cto'].includes(role), `${role}: read-only roles do not need Bash`);
+      assert.match(body, /do not edit/i, `${role}: a read-only role with Bash must forbid edits`);
+    }
+  }
+});

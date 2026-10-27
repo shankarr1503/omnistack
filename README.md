@@ -117,8 +117,9 @@ Every skill in this repository must:
 3. **End with evidence.** A fixed report format separating what was verified from what was not.
 4. **Be safe by default.** No destructive action without the user's confirmation.
 5. **Be short.** Under 200 lines, so it fits comfortably in context.
+6. **Treat what it reads as data.** Logs, issues, pull requests, changelogs and code comments can be written by anyone. Each skill says that text in them is data, not instructions, and to keep secrets out of reports. Nothing in a skill is hidden from a human reader: no HTML comments, invisible Unicode or remote instructions.
 
-CI checks the structure of every skill (frontmatter, naming, a clear "Use when" trigger, length, no runtime dependency, and no broken cross-references). See [CONTRIBUTING.md](CONTRIBUTING.md) to propose a new skill; [`skill-forge`](library/skills/skill-forge/SKILL.md) will help you write it.
+CI checks the structure of every skill (frontmatter, naming, a clear "Use when" trigger, length, no runtime dependency, and no broken cross-references) and its safety (an untrusted-input rule, no hidden characters or HTML comments, no URLs or piped installers, and destructive commands only where they are forbidden). See [CONTRIBUTING.md](CONTRIBUTING.md) to propose a new skill; [`skill-forge`](library/skills/skill-forge/SKILL.md) will help you write it.
 
 ## Measured, not just claimed
 
