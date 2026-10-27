@@ -184,3 +184,52 @@ test('runtime skills trigger only for the runtime and defer to library skills', 
       assert.ok(library_.includes(target!), `${name}: references unknown library skill ${target}`);
   }
 });
+test('the triggering eval covers every skill that loads on its own', async () => {
+  const names = (await readdir(library, { withFileTypes: true }))
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+  const automatic: string[] = [];
+  for (const name of names) {
+    const text = await readFile(join(library, name, 'SKILL.md'), 'utf8');
+    if (!/^disable-model-invocation: true$/m.test(text)) automatic.push(name);
+  }
+  const { cases } = JSON.parse(
+    await readFile(join(root, 'bench', 'triggers', 'cases.json'), 'utf8'),
+  ) as { cases: { prompt: string; expect: string | null; accept?: string[] }[] };
+  const prompts = new Set<string>();
+  for (const c of cases) {
+    assert.ok(c.prompt.trim(), 'empty prompt');
+    assert.ok(!prompts.has(c.prompt), `duplicate prompt: ${c.prompt}`);
+    prompts.add(c.prompt);
+    // A skill that only starts from its command can never be the right automatic load.
+    if (c.expect !== null)
+      assert.ok(automatic.includes(c.expect), `unknown or manual skill ${c.expect}`);
+    for (const a of c.accept ?? []) assert.ok(automatic.includes(a), `unknown accepted skill ${a}`);
+  }
+  for (const name of automatic)
+    assert.ok(
+      cases.filter((c) => c.expect === name).length >= 3,
+      `${name}: needs at least 3 triggering prompts`,
+    );
+  assert.ok(cases.filter((c) => c.expect === null).length >= 5, 'needs near-miss prompts');
+});
+test('the triggering eval reads loaded skills from the stream', async () => {
+  const runner = join(root, 'bench', 'triggers', 'run.mjs');
+  const { skillsLoaded, judge } = (await import(runner)) as {
+    skillsLoaded: (stream: string) => string[];
+    judge: (c: { expect: string | null }, loaded: string[]) => boolean;
+  };
+  const event = (content: unknown[]) => JSON.stringify({ type: 'assistant', message: { content } });
+  const stream = [
+    'not json',
+    JSON.stringify({ type: 'user', message: { content: [] } }),
+    event([{ type: 'tool_use', name: 'Skill', input: { skill: 'omni:root-cause' } }]),
+    event([{ type: 'tool_use', name: 'Read', input: { file_path: '/x/skills/fix-ci/SKILL.md' } }]),
+    event([{ type: 'tool_use', name: 'Read', input: { file_path: '/x/src/skills/notes.md' } }]),
+    event([{ type: 'text', text: 'use the prove-it skill' }]),
+  ].join('\n');
+  assert.deepEqual(skillsLoaded(stream), ['fix-ci', 'root-cause']);
+  assert.equal(judge({ expect: 'fix-ci' }, ['fix-ci', 'root-cause']), true);
+  assert.equal(judge({ expect: null }, ['root-cause']), false);
+  assert.equal(judge({ expect: null }, []), true);
+});

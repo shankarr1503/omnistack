@@ -1,6 +1,6 @@
 ---
 name: test-first
-description: Test-driven development discipline. Use when implementing a feature, fixing a bug, or changing behavior in code that has (or should have) tests. Write a failing test, watch it fail for the right reason, make it pass with the least code, then refactor.
+description: Test-driven development discipline. Use when implementing a feature or changing behavior in code that has (or should have) tests. Write a failing test, watch it fail for the right reason, make it pass with the least code, then refactor. For a bug with an unknown cause, start with root-cause.
 ---
 
 # Test first

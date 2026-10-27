@@ -96,7 +96,19 @@ The benchmark has not yet been run with other or weaker models, where instructio
 
 - Tasks large enough that the agent cannot read everything: real repositories, many files, partial information.
 - More runs per condition, and weaker or older models, where instructions are likely to matter more.
-- A triggering test: whether the right skill loads on its own from the user's wording, instead of being named in the prompt.
+- Run the triggering test below and publish its results.
+
+## Triggering
+
+Every run above named the skill in the prompt. In real use a skill loads only when its description matches the request, so [`triggers/`](triggers) checks that separately: [`cases.json`](triggers/cases.json) has three or more everyday prompts for every skill that loads on its own, plus near-misses that should load nothing (including a request for a team of agents, since `company` starts only from its command). CI checks that the cases cover every skill; it does not run them.
+
+```sh
+node bench/triggers/run.mjs --dry-run                 # list cases and the most it can cost
+node bench/triggers/run.mjs --only fix-ci             # a few real runs
+node bench/triggers/run.mjs --out /tmp/triggers.json  # all cases, results as JSON
+```
+
+Each case is one `claude -p` call with the library loaded as a plugin, in an empty temporary repository, with no tool that runs commands or changes files, capped by `--budget` dollars (default 0.30). It counts a skill as loaded when the agent calls it or reads its `SKILL.md`, and reports skills that loaded without being expected, which is how overlapping descriptions show up. These runs spend money on your account. Results have not been published yet.
 
 ## Running it
 

@@ -1,6 +1,6 @@
 ---
 name: root-cause
-description: Find the real cause of a bug before changing code. Use when something fails, crashes, returns wrong results, is flaky, or "worked before" — and before proposing any fix. Reproduce, isolate, prove the cause, then fix once.
+description: Find the real cause of a bug before changing code. Use when something fails, crashes, returns wrong results, is flaky or "worked before", and before proposing any fix. Reproduce, isolate, prove the cause, then fix once. For a failure seen only in CI, use fix-ci.
 ---
 
 # Root cause

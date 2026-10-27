@@ -1,0 +1,162 @@
+{
+  "about": "Prompts that should load one library skill, and near-misses that should load none. A case passes when its expected skill is among the skills the agent loads; a case with \"expect\": null passes when no library skill loads. \"accept\" lists other skills that are also a reasonable load.",
+  "cases": [
+    {
+      "prompt": "The export job returns duplicate rows since yesterday. Figure out why.",
+      "expect": "root-cause"
+    },
+    {
+      "prompt": "Login crashes with TypeError: cannot read properties of undefined (reading 'id'). Fix it.",
+      "expect": "root-cause"
+    },
+    {
+      "prompt": "This worked last week and now the totals are off by one cent. What broke?",
+      "expect": "root-cause"
+    },
+    {
+      "prompt": "Implement a parseDuration function that turns '1h30m' into seconds.",
+      "expect": "test-first"
+    },
+    {
+      "prompt": "Add a --dry-run flag to the deploy command, with tests.",
+      "expect": "test-first",
+      "accept": ["plan-it"]
+    },
+    {
+      "prompt": "Build the discount rule: orders over 100 EUR get 10% off, but never on gift cards.",
+      "expect": "test-first",
+      "accept": ["plan-it"]
+    },
+    {
+      "prompt": "I think the fix is finished. Can you confirm it actually works before I hand it off?",
+      "expect": "prove-it"
+    },
+    {
+      "prompt": "Before you tell me it's done, make sure everything passes.",
+      "expect": "prove-it"
+    },
+    {
+      "prompt": "Is this branch ready to open a PR? Verify it.",
+      "expect": "prove-it",
+      "accept": ["ship-review"]
+    },
+    {
+      "prompt": "Plan how we would move billing from Stripe Charges to PaymentIntents before touching code.",
+      "expect": "plan-it"
+    },
+    {
+      "prompt": "Write an implementation plan for adding multi-tenant support to the API.",
+      "expect": "plan-it"
+    },
+    {
+      "prompt": "We need to split the monolith's user module into its own package. How should we sequence it?",
+      "expect": "plan-it",
+      "accept": ["safe-refactor"]
+    },
+    { "prompt": "Review this branch before I merge it.", "expect": "ship-review" },
+    { "prompt": "Is PR 42 safe to merge? Look for bugs.", "expect": "ship-review" },
+    {
+      "prompt": "Check my diff for anything that will break in production.",
+      "expect": "ship-review"
+    },
+    { "prompt": "Do a security review of the new file upload endpoint.", "expect": "threat-check" },
+    {
+      "prompt": "Could an attacker abuse the password reset flow? Check it.",
+      "expect": "threat-check"
+    },
+    {
+      "prompt": "We're about to ship the payments webhook handler. Look for vulnerabilities.",
+      "expect": "threat-check",
+      "accept": ["ship-review"]
+    },
+    {
+      "prompt": "Clean up utils.js: it's 900 lines and full of duplicated helpers. Don't change behavior.",
+      "expect": "safe-refactor"
+    },
+    {
+      "prompt": "Extract the pricing logic out of the controller into its own module.",
+      "expect": "safe-refactor"
+    },
+    { "prompt": "Rename UserManager to AccountService everywhere.", "expect": "safe-refactor" },
+    {
+      "prompt": "GitHub Actions is red on main but the tests pass on my laptop.",
+      "expect": "fix-ci"
+    },
+    { "prompt": "The CI build job fails at the lint step. Fix it.", "expect": "fix-ci" },
+    {
+      "prompt": "Our Jenkins pipeline keeps failing on the integration tests, intermittently.",
+      "expect": "fix-ci"
+    },
+    {
+      "prompt": "The /search endpoint takes 4 seconds with 10k products. Speed it up.",
+      "expect": "perf-hunt"
+    },
+    {
+      "prompt": "The worker's memory keeps climbing until it is OOM-killed.",
+      "expect": "perf-hunt",
+      "accept": ["root-cause"]
+    },
+    { "prompt": "Optimize the report generation, it's too slow.", "expect": "perf-hunt" },
+    { "prompt": "Write the commit message for my staged changes.", "expect": "commit-craft" },
+    { "prompt": "Split my working changes into sensible commits.", "expect": "commit-craft" },
+    { "prompt": "Write a pull request description for this branch.", "expect": "commit-craft" },
+    {
+      "prompt": "Rename the users.email column to email_address. The table has 40M rows and is live.",
+      "expect": "safe-migration"
+    },
+    {
+      "prompt": "Add a NOT NULL constraint to orders.customer_id in Postgres.",
+      "expect": "safe-migration"
+    },
+    {
+      "prompt": "Backfill the new normalized_phone column for all existing rows.",
+      "expect": "safe-migration"
+    },
+    { "prompt": "Upgrade React from 17 to 18.", "expect": "upgrade-deps" },
+    {
+      "prompt": "npm audit reports 12 vulnerabilities. Bump what we need to.",
+      "expect": "upgrade-deps"
+    },
+    { "prompt": "Move this project from Python 3.9 to 3.12.", "expect": "upgrade-deps" },
+    {
+      "prompt": "This billing module has no tests at all. Add some before I change it.",
+      "expect": "legacy-tests"
+    },
+    {
+      "prompt": "Pin down what the old invoice formatter does today so I can rewrite it safely.",
+      "expect": "legacy-tests"
+    },
+    { "prompt": "Add tests to the existing CSV importer.", "expect": "legacy-tests" },
+    {
+      "prompt": "Design the REST endpoints for managing team invitations.",
+      "expect": "api-contract"
+    },
+    {
+      "prompt": "Review this API proposal: POST /createUser returns 200 with {error} on failure.",
+      "expect": "api-contract"
+    },
+    {
+      "prompt": "We want to change the response shape of GET /orders. Is it a breaking change?",
+      "expect": "api-contract"
+    },
+    { "prompt": "I just joined. How does this codebase work?", "expect": "map-codebase" },
+    { "prompt": "Where is authentication handled in this repo?", "expect": "map-codebase" },
+    {
+      "prompt": "Give me a map of this repository before we change anything.",
+      "expect": "map-codebase"
+    },
+    { "prompt": "Turn our code review checklist into a skill.", "expect": "skill-forge" },
+    { "prompt": "Write a SKILL.md for our release process.", "expect": "skill-forge" },
+    { "prompt": "This skill never triggers. Improve its description.", "expect": "skill-forge" },
+    {
+      "prompt": "Split this feature across a team of agents and build it.",
+      "expect": null,
+      "note": "company starts only from its command"
+    },
+    { "prompt": "What is the difference between a mutex and a semaphore?", "expect": null },
+    { "prompt": "Convert this JSON to YAML: {\"a\": 1, \"b\": [2, 3]}", "expect": null },
+    { "prompt": "What does the regex ^\\d{3}-\\d{4}$ match?", "expect": null },
+    { "prompt": "Write a haiku about autumn.", "expect": null },
+    { "prompt": "What time zone is UTC+5:30?", "expect": null }
+  ]
+}
