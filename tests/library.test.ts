@@ -238,6 +238,8 @@ async function markdownFiles(dir: string): Promise<string[]> {
   const files: string[] = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
+    // install.sh copies these trees; a symlink could pull in files from outside the repository.
+    assert.ok(!entry.isSymbolicLink(), `${path}: no symlinks in skill directories`);
     if (entry.isDirectory()) files.push(...(await markdownFiles(path)));
     else if (entry.name.endsWith('.md')) files.push(path);
   }

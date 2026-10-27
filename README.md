@@ -35,7 +35,7 @@ To update later, run `claude plugin marketplace update omnistack` and then `clau
 git clone --depth 1 https://github.com/shankarr1503/omnistack && sh omnistack/install.sh
 ```
 
-Options: `--claude`, `--codex`, `--opencode` to pick hosts, `--project <dir>` to install into one repository (and commit it for your team), `--uninstall` to remove. The installer never overwrites a skill you have edited unless you pass `--force`. Skills installed this way are not namespaced: `/root-cause`, `/company` in Claude Code, `$root-cause` in Codex. If the Claude Code plugin is installed and enabled for your user, the installer skips Claude Code unless you pass `--claude` or `--project`, so you don't get every skill twice.
+Options: `--claude`, `--codex`, `--opencode` to pick hosts, `--project <dir>` to install into one repository (and commit it for your team), `--ref <tag>` to install a release you have reviewed (for example `plugin-v1.2.0`), `--uninstall` to remove. When it clones, the installer prints the exact commit it installed. The installer never overwrites a skill you have edited unless you pass `--force`. Skills installed this way are not namespaced: `/root-cause`, `/company` in Claude Code, `$root-cause` in Codex. If the Claude Code plugin is installed and enabled for your user, the installer skips Claude Code unless you pass `--claude` or `--project`, so you don't get every skill twice.
 
 **Manual:** copy any folder from [`library/skills`](library/skills) into `~/.claude/skills/`, `~/.agents/skills/` (Codex) or `~/.config/opencode/skills/`.
 

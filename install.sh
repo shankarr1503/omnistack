@@ -1,22 +1,24 @@
 #!/bin/sh
 # Install the OmniStack skill library into Claude Code, Codex and/or OpenCode.
-# Usage: sh install.sh [--claude] [--codex] [--opencode] [--project DIR] [--force] [--uninstall]
+# Usage: sh install.sh [--claude] [--codex] [--opencode] [--project DIR] [--ref TAG] [--force] [--uninstall]
 # With no host flags, installs into every host whose config directory exists
 # (falls back to Claude Code). Claude Code also gets the company roles as omni-* subagents.
-# Existing files that differ are never overwritten without --force.
+# Existing files that differ are never overwritten without --force. Outside a checkout, or with
+# --ref, it clones the repository (at TAG, e.g. plugin-v1.2.0, a version you have reviewed).
 set -eu
 
 REPO_URL="https://github.com/shankarr1503/omnistack.git"
-hosts="" project="" force=0 uninstall=0
+hosts="" project="" ref="" force=0 uninstall=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --claude) hosts="$hosts claude" ;;
     --codex) hosts="$hosts codex" ;;
     --opencode) hosts="$hosts opencode" ;;
     --project) shift; project="${1:?--project needs a directory}" ;;
+    --ref) shift; ref="${1:?--ref needs a tag or branch}" ;;
     --force) force=1 ;;
     --uninstall) uninstall=1 ;;
-    -h|--help) sed -n '2,6p' "$0" 2>/dev/null || true; exit 0 ;;
+    -h|--help) sed -n '2,7p' "$0" 2>/dev/null || true; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 64 ;;
   esac
   shift
@@ -25,11 +27,14 @@ done
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || echo "")
-if [ -n "$script_dir" ] && [ -d "$script_dir/library/skills" ]; then
+if [ -z "$ref" ] && [ -n "$script_dir" ] && [ -d "$script_dir/library/skills" ]; then
   source_dir="$script_dir/library/skills"
 else
   command -v git >/dev/null || { echo "git is required" >&2; exit 1; }
-  git clone --quiet --depth 1 "$REPO_URL" "$tmp/omnistack"
+  case "$ref" in -*) echo "Invalid --ref: $ref" >&2; exit 64 ;; esac
+  git clone --quiet --depth 1 ${ref:+--branch "$ref"} -- "$REPO_URL" "$tmp/omnistack"
+  # Name the exact commit so the install can be audited and repeated.
+  echo "Installing from $REPO_URL at $(git -C "$tmp/omnistack" rev-parse HEAD)${ref:+ ($ref)}"
   source_dir="$tmp/omnistack/library/skills"
 fi
 
