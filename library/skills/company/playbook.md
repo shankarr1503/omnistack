@@ -106,13 +106,28 @@ Constraints: <stack, budget, licenses, deadlines, things never to do>
 Definition of shipped: <e.g. merged to main with CI green and a changelog entry>
 ```
 
+## CFO standing policy
+
+For a standard run with at most three tickets in one build wave and no board trigger, the chief of staff writes `04-budget.md` from this policy instead of calling the CFO:
+
+```
+# Budget: <name> (standing policy, no CFO call)
+Mode: standard
+Max parallel engineers: <number of tickets in the wave>
+Budget line: <twice the planned subagent calls>
+Model tiers: each role's default
+Ticket plan changes: none
+Stop-loss: the company skill's defaults
+```
+
+Anything larger, a request to raise the budget line, or a doubt goes to the CFO.
+
 ## Engineer prompt
 
 ```
 You are <role> on ticket T<n> of the run in .omni/company/<run>/.
-Read your ticket in 04-tickets.md and, where they exist, the contracts in 03-architecture.md,
-the criteria in 02-spec.md (or the must-haves in 01-vision.md in quick mode), the copy in
-03-ux.md and the SEC requirements in 03-threat-model.md.
+Your ticket, which carries the contracts and criteria you need:
+<the ticket's text from 04-tickets.md>
 You own: <code and test files>. Change nothing else. Never touch the founder's files: <list or none>.
 Baseline failing tests (not yours to fix): <names or none>.
 Working at the same time: T<a> owns <files>; T<b> owns <files>. They are editing now: run only

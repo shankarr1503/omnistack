@@ -33,7 +33,7 @@ Each role's brief is a file in this skill's `roles/` folder. Run each role as it
 3. Otherwise: a general-purpose subagent whose prompt starts with the text of `roles/<role>.md` without its frontmatter. It loses the role's tool limits and model tier; tell it which tools it must not use.
 4. No subagents at all: play each role yourself, one at a time, following its brief and output format exactly.
 
-Every role prompt contains the founder's request, the run folder path, and the paths of the documents the role needs; roles read files themselves. Give `charter.md` and `decisions.md` (when they exist) to the CEO, CTO, engineering manager, CFO and board, and the baseline in `STATUS.md` (including the founder's files) to every role that edits, reviews or tests. **Save each role's output to its file before you start any role that reads it**: documents under the names in `playbook.md`, engineer reports in `reports/`, reviews in `05-*.md`, QA in `06-qa.md`. Count every subagent call in `STATUS.md`. Keep your own context small: list changed files with `--name-only`, and from test output read the counts and the names of failing tests, not the whole log.
+Every role prompt contains the founder's request, the run folder path, and the paths of the documents the role needs; roles read files themselves, so never paste a document into a prompt. Two exceptions save each role a search: an engineer's prompt carries its ticket text, and a reviewing role's prompt carries the exact command for the run's changes (`git diff <baseline tree id> <current tree id>`), so it never needs `playbook.md`. Give `charter.md` and `decisions.md` (when they exist) to the CEO, CTO, engineering manager, CFO and board, and the baseline in `STATUS.md` (including the founder's files) to every role that edits, reviews or tests. **Save each role's output to its file before you start any role that reads it**: documents under the names in `playbook.md`, engineer reports in `reports/`, reviews in `05-*.md`, QA in `06-qa.md`. Count every subagent call in `STATUS.md`. **Token discipline.** Every subagent call costs its brief plus everything it reads, and your own context is re-read on every turn. Keep your context small: list changed files with `--name-only`; from test output read the exit status, the counts and the names of failing tests, not the whole log; never re-read a document you just saved. Call only the roles the mode and the triggers require, and when unsure between two modes, pick the smaller.
 
 ## Phase 0: intake
 
@@ -54,7 +54,7 @@ The memo's size sets the mode. The founder's preference wins; the CFO may move a
 | standard | a real feature across several files | everyone except the board                                                                    |
 | full     | large, risky or irreversible        | everyone, including the board                                                                |
 
-**Quick mode** skips Phases 2 and 3 and the staff review. Write `04-tickets.md` yourself with one senior ticket, T1: Owns (code and test files), Do (the memo's must-haves), Done when (a runnable check of the memo's "Success looks like"). Show the founder the ticket in two lines and wait, unless told not to ask. Then run Phase 4 with T1 as the only wave, and Phases 5 and 6 with QA verifying the memo's must-haves.
+**Quick mode** skips Phases 2 and 3 and the staff review. Write `04-tickets.md` yourself with one self-contained senior ticket, T1: Owns (code and test files), Do (the memo's must-haves, copied), Done when (a runnable check of the memo's "Success looks like", and the suite command from the baseline). Show the founder the ticket in two lines and wait, unless told not to ask. Then run Phase 4 with T1 as the only wave, and Phases 5 and 6 with QA verifying the memo's must-haves.
 
 ## Phase 2: leadership
 
@@ -67,7 +67,7 @@ The memo's size sets the mode. The founder's preference wins; the CFO may move a
 
 1. Call **eng-manager** with the spec, architecture, UX spec, threat model and the founder's files; save `04-tickets.md`.
 2. **Check file ownership yourself**: within a wave, no file - code, test, fixture or config - is owned by two tickets, and no ticket owns one of the founder's files. If it fails, send the plan back once; after that, fix the overlap yourself by moving a ticket to a later wave.
-3. Call **cfo** with the vision memo and ticket plan; save `04-budget.md`. If it merges, cuts or re-levels tickets, send those changes to the engineering manager for a revised plan and repeat step 2.
+3. Call **cfo** with the vision memo and ticket plan; save `04-budget.md`. If it merges, cuts or re-levels tickets, send those changes to the engineering manager for a revised plan and repeat step 2. The CFO delegates small plans: with at most three tickets in one build wave and no board trigger, skip the call and write `04-budget.md` yourself from the CFO's standing policy in `playbook.md`.
 4. Call **board** in full mode, or when the plan deletes data, breaks a public API, touches auth or payments, runs a production migration, or exceeds the CFO's budget line. Save `04-board.md`. Its "escalate to the founder" items go to the founder before building.
    - Approved with conditions: send the conditions to the engineering manager to become tickets or Done-when checks.
    - Rejected: send the resolution to the owner of what was rejected (CEO: the bet; CTO: the design; engineering manager: the plan), redo the phases from there, and call the board once more. A second rejection goes to the founder.
@@ -76,7 +76,7 @@ The memo's size sets the mode. The founder's preference wins; the CFO may move a
 ## Phase 4: build in waves
 
 1. Before each wave, snapshot the working tree (command in `playbook.md`) and record the tree id.
-2. **Wave 0**: the staff engineer builds the contracts and shared hot spots. Afterwards no test may fail beyond the baseline failures.
+2. **Wave 0**, only when the plan has one: the staff engineer builds the contracts and shared hot spots. Afterwards no test may fail beyond the baseline failures. With no new contract or shared file, skip it and save the call.
 3. **Each later wave**: start one engineer per ticket **in parallel** (one message, several subagent calls), up to the CFO's limit, using the ticket's level: `staff-engineer`, `senior-engineer` or `junior-engineer`. Pass the CFO's model tier as the subagent's model when your host allows it. Each prompt follows the engineer prompt in `playbook.md`: the ticket, the files it owns, and the other tickets running now with the files _they_ own.
 4. Engineers share one working tree; exclusive file ownership keeps them apart, and they run only checks scoped to their own files. Do not use per-agent worktrees unless your host creates them from the current state, including uncommitted work.
 5. **After every wave**, before the next one:
