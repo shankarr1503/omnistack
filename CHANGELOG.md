@@ -2,6 +2,25 @@
 
 The skill library (the Claude Code plugin `omni`, also installed by `install.sh`) and the optional runtime (the `omni` CLI) are versioned separately. The plugin version lives in `library/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`; the runtime version in `package.json`.
 
+## Plugin 1.2.0 — unreleased
+
+Security:
+
+- Every skill and company role now says which of its inputs (logs, CI output, pull requests, issues, changelogs, code comments, other roles' reports) are data, not instructions, and to mask secrets in reports. `company` treats only the founder's messages as instructions; `charter.md` and `decisions.md` cannot override a gate.
+- `fix-ci` and `ship-review` run an untrusted change only in a container or VM without credentials. `upgrade-deps` checks new package names and the lockfile diff for typosquats and installs unfamiliar packages with scripts disabled first. `safe-migration` never runs destructive SQL or touches production without approval. `skill-forge` requires new skills to do the same and to hide nothing.
+- The engineering manager role no longer has `Bash`.
+- CI fails any skill or role containing invisible, bidirectional or Unicode tag characters, HTML comments, URLs, a download piped into a shell, a destructive command outside a prohibition, or a symlink, and any read-only role with `Bash` other than the CSO and CTO.
+- `install.sh --ref <tag>` installs a reviewed release, and the installer prints the exact commit it cloned.
+
+Behavior:
+
+- `company` starts only when you run `/omni:company` or `/company` in Claude Code (`disable-model-invocation`), because a run costs 5-25x a single agent.
+- `fix-ci` pushes only with the user's go-ahead.
+- `prove-it` treats exported and public functions as having callers outside the repository: keep old call forms working or report a breaking change.
+- `root-cause` hands CI-only failures to `fix-ci`, and `test-first` hands bugs with an unknown cause to `root-cause`, so "a test is failing" no longer matches three skills equally.
+- Smaller fixes: `skill-forge` states the real limits (200 lines, 300-character descriptions, now enforced); the CFO's stop-loss rules point at the company skill's instead of repeating them; QA removes the worktree it creates and uses strict expected-failure markers; Phase 0 handles a repository with no commits.
+- `bench/triggers`: an eval of whether each skill loads on its own from everyday wording, with near-misses.
+
 ## Plugin 1.1.2 — unreleased
 
 - `root-cause`: when the bug arrives with a failing test, also add a test that targets the cause, in the code being changed. That test usually checks only the symptom, so the cause stayed unguarded: in a benchmark run the agent fixed the right line but added no test for it. The report gains a `Test:` line, so a missing test is visible.
@@ -41,4 +60,5 @@ Fixed before release:
 - Fixed: review diffs covered only the first 100 repository files; `edit_file` interpreted `$&`/`$$` in replacement text; non-normalised written paths were missing from review diffs.
 - Common credential files (`.netrc`, `.npmrc`, `.pypirc`, `.docker/config.json`, keystores, Terraform state) are outside tool scope.
 - Redaction no longer rewrites ordinary code (`token: string`, `secret = load()`) or lets `write_file` save `[REDACTED]` over real secrets: tool reads use per-run placeholders that writes and edits restore, quoted credentials are masked through their closing quote, and writes that would add an unrestorable placeholder are refused.
+- The `skills/omni-*` wrappers trigger only when the user asks OmniStack or omni for the work, and name the library skill that does it without a runtime; they no longer compete with the library skills for ordinary requests. A test keeps the uninstall list in sync with `skills/`.
 - Budget estimates counted four tokens per character instead of roughly a quarter token, and calls the provider refused (401, 429, HTTP errors) were charged their full estimate to task and daily budgets. Refusals now cost nothing; timeouts, gateway timeouts (504, 524) and lost replies are still charged conservatively.
