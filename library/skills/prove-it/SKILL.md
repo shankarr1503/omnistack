@@ -26,6 +26,7 @@ Read the output. Do not infer success from an exit code you did not see, a trunc
 - Did I handle the error/empty/edge case here, or only the happy path?
 - Did I leave a TODO, placeholder, hard-coded value or `skip`/`only` in a test?
 - Does every caller of a function I changed still work? Search for them.
+- Is it exported, public or part of a package's API? Then it has callers you cannot search. Keep the old call forms working (accept the old arguments, keep defaults and return shapes), or report it as a breaking change. Updating every in-repo caller does not make it safe.
 
 ## Report honestly
 
