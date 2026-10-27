@@ -2,6 +2,19 @@
 
 The skill library (the Claude Code plugin `omni`, also installed by `install.sh`) and the optional runtime (the `omni` CLI) are versioned separately. The plugin version lives in `library/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`; the runtime version in `package.json`.
 
+## Plugin 1.3.0 — unreleased
+
+Token use:
+
+- The 13 company-role descriptions, which Claude Code loads into every session, are one line each (at most 160 characters). Descriptions loaded per session went from about 2,190 to 1,570 tokens (-28%), measured with the new `scripts/context-cost.mjs`.
+- Thirteen skills say how to read the large output they meet cheaply: the first error in a CI log, test summaries with the exit status, searches instead of directory reads, the changelog sections between two versions, the top of a profile. `skill-forge` asks new skills to do the same.
+- `company` runs avoid reads and calls that buy nothing. Tickets carry their contracts and criteria, so engineers no longer read the spec, architecture, UX spec and threat model. The CTO writes codebase notes that later roles use instead of mapping the code again. Reviewers get the diff command in their prompt. Wave 0 runs only when it has something to build. The CFO's standing policy covers small plans without a call. QA reuses a suite result already recorded on the current snapshot. Every document has a line limit. These are designed savings; no new company benchmark has been run yet.
+- CI fails if descriptions, skill bodies, role briefs or the playbook grow past their token ceilings.
+
+Organization:
+
+- One org chart that every brief agrees with: engineering (engineering manager, staff engineer, QA lead, release manager) reports to the CTO, senior and junior engineers to the engineering manager, the CEO's staff to the CEO, the board to the founder. Every role's report has a verdict, question or escalation line, and every document is saved where its producer is called. A test checks all of this against the chart.
+
 ## Plugin 1.2.0 — unreleased
 
 Security:
