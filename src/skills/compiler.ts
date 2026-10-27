@@ -166,6 +166,26 @@ export async function installSkills(
 ): Promise<string[]> {
   return (await installSkillsReport(home, adapters, entrypoint)).installed;
 }
+/**
+ * Every wrapper uninstall may remove. Kept as a list rather than read from skills/ so uninstall still
+ * works from a damaged checkout; a test checks it matches skills/.
+ */
+export const runtimeSkillNames: readonly string[] = [
+  'omni',
+  ...[
+    'plan',
+    'build',
+    'architect',
+    'council',
+    'debug',
+    'review',
+    'security',
+    'test',
+    'research',
+    'optimize',
+    'ship',
+  ].map((s) => `omni-${s}`),
+];
 export async function uninstallSkills(
   home: string,
   adapters: HostAdapter[],
@@ -173,24 +193,7 @@ export async function uninstallSkills(
   const manifestPath = join(home, 'state', 'skills.json'),
     manifest = await readManifest(manifestPath);
   const allowed = new Set(
-    adapters.flatMap((a) =>
-      [
-        'omni',
-        ...[
-          'plan',
-          'build',
-          'architect',
-          'council',
-          'debug',
-          'review',
-          'security',
-          'test',
-          'research',
-          'optimize',
-          'ship',
-        ].map((s) => `omni-${s}`),
-      ].map((s) => join(a.skillDirectory, s, 'SKILL.md')),
-    ),
+    adapters.flatMap((a) => runtimeSkillNames.map((s) => join(a.skillDirectory, s, 'SKILL.md'))),
   );
   // Uninstall must still work from a damaged checkout; without skills only manifest hashes prove
   // ownership, which is the conservative outcome.

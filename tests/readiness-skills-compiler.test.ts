@@ -18,6 +18,7 @@ import {
   installSkills,
   loadSkills,
   renderSkill,
+  runtimeSkillNames,
   sourceRoot,
   uninstallSkills,
 } from '../src/skills/compiler.js';
@@ -223,4 +224,8 @@ test('a damaged skill manifest is reported clearly by install and uninstall', as
   }
   await rm(join(home, 'state', 'skills.json'));
   assert.equal((await installSkills(home, adapters)).length, 36, 'works again once deleted');
+});
+test('uninstall knows every runtime skill and nothing else', async () => {
+  // A skill missing from the list would be installed by setup but never removed by uninstall.
+  assert.deepEqual([...runtimeSkillNames].sort(), (await loadSkills()).map((s) => s.name).sort());
 });
