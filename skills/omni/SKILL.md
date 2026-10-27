@@ -1,6 +1,6 @@
 ---
 name: omni
-description: Route software-engineering requests through the shared OmniStack runtime.
+description: Route an engineering request through the OmniStack multi-model runtime. Use when the user asks OmniStack or omni to handle a task without naming a workflow, or wants several configured models to plan, build and review it.
 ---
 
 Classify intent, risk, scope and verification requirements. Route simple work to FAST, normal features to TEAM, and high-risk or uncertain work to COUNCIL.

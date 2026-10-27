@@ -158,3 +158,29 @@ test('the company skill, its roles and the plugin manifest agree', async () => {
     'plugin.json must list every role as an agent',
   );
 });
+test('runtime skills trigger only for the runtime and defer to library skills', async () => {
+  const runtime = join(root, 'skills');
+  const library_ = (await readdir(library, { withFileTypes: true }))
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+  const names = (await readdir(runtime, { withFileTypes: true }))
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+  const descriptions = new Set<string>();
+  for (const name of names) {
+    const text = await readFile(join(runtime, name, 'SKILL.md'), 'utf8');
+    const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/.exec(text);
+    assert.ok(match, `${name}: missing frontmatter`);
+    const meta = parse(match[1]!) as Record<string, unknown>;
+    assert.equal(meta.name, name, `${name}: name must match directory`);
+    const description = String(meta.description);
+    assert.ok(description.length >= 80 && description.length <= 300, `${name}: description length`);
+    assert.match(description, /\bUse when\b/, `${name}: description must say when to use it`);
+    // Library skills cover the same work without a runtime; these must not compete for ordinary requests.
+    assert.match(description, /\bOmniStack\b/, `${name}: scope the trigger to the runtime`);
+    assert.ok(!descriptions.has(description), `${name}: duplicate description`);
+    descriptions.add(description);
+    for (const [, target] of match[2]!.matchAll(/`([a-z0-9-]+)` skill/g))
+      assert.ok(library_.includes(target!), `${name}: references unknown library skill ${target}`);
+  }
+});

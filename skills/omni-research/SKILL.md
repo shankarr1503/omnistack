@@ -1,6 +1,6 @@
 ---
 name: omni-research
-description: Investigate engineering choices and connect evidence to repository constraints.
+description: Research engineering choices against the repository's constraints with the OmniStack runtime, read-only. Use when the user asks OmniStack or omni to research or compare libraries, approaches or vendors.
 ---
 
 Use available research extensions for current external sources. Without them, disclose that no live research occurred. Distinguish facts, assumptions and recommendations. Remain read-only.

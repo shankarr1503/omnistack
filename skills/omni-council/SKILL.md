@@ -1,6 +1,6 @@
 ---
 name: omni-council
-description: Compare independent model proposals and synthesize engineering decisions.
+description: Compare independent proposals from several configured models and synthesize a decision with the OmniStack runtime. Use when the user asks for an OmniStack council or wants several models to weigh an engineering decision.
 ---
 
 Use bounded COUNCIL execution. Present anonymous candidates, contradictions, tradeoffs, combined recommendations and unresolved conflicts.
