@@ -75,15 +75,18 @@ That is the plugin command. Installed with `install.sh` or by hand, use `/compan
 
 ```
 You (founder)
-└─ Board: chair, investor, independent director       approve big or irreversible bets
-   └─ CEO                                             what and why, and what not to build
-      ├─ CPO: spec          ├─ CTO: architecture      ├─ Design lead: UX and copy
-      ├─ CSO: threat model and security review        ├─ CFO: budget, team size, model tiers
-      └─ Engineering manager: tickets with exclusive file ownership, in waves
-         ├─ Staff engineer: contracts, hard tickets, code review
-         ├─ Senior and junior engineers: build in parallel
-         ├─ QA lead: verifies every criterion by running the product
-         └─ Release manager: final gate, commits and PR text, never pushes without you
+└─ Board: chair, investor, independent director     approve big or irreversible bets
+   └─ CEO                                           what and why, and what not to build
+      ├─ CPO                                        spec with testable criteria
+      ├─ Design lead                                UX and copy
+      ├─ CSO                                        threat model and security review
+      ├─ CFO                                        budget, team size, model tiers
+      └─ CTO                                        architecture, contracts, codebase notes
+         ├─ Engineering manager                     self-contained tickets, exclusive file ownership, waves
+         │  └─ Senior and junior engineers          build in parallel
+         ├─ Staff engineer                          contracts, hard tickets, code review
+         ├─ QA lead                                 verifies every criterion by running the product
+         └─ Release manager                         final gate, commits and PR text, never pushes without you
 ```
 
 How it works:

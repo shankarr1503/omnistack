@@ -299,3 +299,87 @@ test('every skill and role treats what it reads as data', async () => {
     }
   }
 });
+test('the company works as one organization', async () => {
+  const skill = await readFile(join(company, 'SKILL.md'), 'utf8');
+  const all = await roles();
+  // The org chart: one role per line, each under the nearest less-indented line above it.
+  const chart = /```\n(Founder[\s\S]*?)```/.exec(skill)?.[1];
+  assert.ok(chart, 'company skill needs an org chart');
+  const id = (display: string) =>
+    ({ 'engineering manager': 'eng-manager', 'senior engineers': 'senior-engineer' })[display] ??
+    { 'junior engineers': 'junior-engineer' }[display] ??
+    display.replace(/ /g, '-');
+  const parent = new Map<string, string>(),
+    stack: { depth: number; role: string }[] = [{ depth: -1, role: 'founder' }];
+  for (const line of chart.split('\n').slice(1)) {
+    const m = /^(.*?)[├└]─ ([A-Za-z ]+?)\s+->/.exec(line);
+    if (!m) continue;
+    const depth = m[1]!.length,
+      role = id(m[2]!.toLowerCase());
+    while (stack.at(-1)!.depth >= depth) stack.pop();
+    parent.set(role, stack.at(-1)!.role);
+    stack.push({ depth, role });
+  }
+  assert.deepEqual(
+    [...parent.keys()].sort(),
+    all.map((r) => r.role),
+    'the org chart lists every role once',
+  );
+  for (const { role, body } of all) {
+    const m = /You report to the (founder|board|CEO|CTO|engineering manager)\b/i.exec(body);
+    assert.ok(m, `${role}: say who you report to`);
+    assert.equal(
+      id(m[1]!.toLowerCase()),
+      parent.get(role),
+      `${role}: reporting line differs from the chart`,
+    );
+    // Every role needs a way to send a decision or a problem up the chain.
+    const template = /## What you return[\s\S]*?```([\s\S]*?)```/.exec(body)?.[1] ?? '';
+    assert.match(
+      template,
+      /verdict|resolution|questions|escalate|blocked|decision|needs approval/i,
+      `${role}: the report needs a verdict, question or escalation line`,
+    );
+  }
+  // Managers name exactly their direct reports.
+  const reports = (manager: string) =>
+    [...parent]
+      .filter(([, p]) => p === manager)
+      .map(([r]) => r)
+      .sort();
+  const named = (role: string, pattern: RegExp) => {
+    const text = pattern.exec(all.find((r) => r.role === role)!.body)?.[1] ?? '';
+    return all
+      .map((r) => r.role)
+      .filter((r) =>
+        text
+          .toLowerCase()
+          .includes(
+            r === 'eng-manager'
+              ? 'engineering manager'
+              : r.replace(/-/g, ' ').replace(/ engineer$/, ''),
+          ),
+      )
+      .sort();
+  };
+  assert.deepEqual(
+    named('ceo', /; the (.*?) report to you/),
+    reports('ceo'),
+    'ceo: direct reports',
+  );
+  assert.deepEqual(
+    named('cto', /; the (.*?) report to you/),
+    reports('cto'),
+    'cto: direct reports',
+  );
+  // Every document is saved where its producer is called, so no role reads a file nobody wrote.
+  const playbook = await readFile(join(company, 'playbook.md'), 'utf8');
+  const documents = [...playbook.matchAll(/[├└]── (0\d-[a-z-]+\.md)\s+# ([a-z-]+)/g)];
+  assert.ok(documents.length >= 10, 'playbook must map each document to its role');
+  for (const [, file, role] of documents) {
+    const line = skill
+      .split('\n')
+      .find((l) => l.includes(`\`${file}\``) && l.includes(`**${role}**`));
+    assert.ok(line, `${file}: the company skill must save it where it calls ${role}`);
+  }
+});

@@ -41,6 +41,7 @@ Model tiers: leadership <tier>, seniors <tier>, juniors <tier>
 Ticket plan changes: <merge / cut / reassign, with reasons, or "none">
 Estimated effort: <tickets x size, agents to spawn>
 Stop-loss: <rules for this run>
+Needs approval: <spending beyond the budget line, for the board or the founder, or "none">
 ```
 
 ## Rules
