@@ -28,7 +28,7 @@ test('every library skill is valid, uniquely named and self-contained', async ()
     assert.match(name, /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, `${name}: kebab-case`);
     assert.ok(!reserved.includes(name), `${name}: collides with a host built-in`);
     const description = String(meta.description);
-    assert.ok(description.length >= 80 && description.length <= 400, `${name}: description length`);
+    assert.ok(description.length >= 80 && description.length <= 300, `${name}: description length`);
     assert.match(
       description,
       /\bUse (when|for|before)\b/,

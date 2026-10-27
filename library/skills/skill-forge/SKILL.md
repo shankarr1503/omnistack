@@ -24,7 +24,7 @@ The `description` decides when the skill loads. It must say **what** it does and
 - Good: `Zero-downtime database migrations. Use when adding, renaming or dropping columns, tables or indexes, or backfilling data.`
 - Bad: `Helps with databases.`
 
-Keep it under ~300 characters. Front-load the trigger words.
+Keep it under 300 characters (this library's CI enforces that). Front-load the trigger words.
 
 ## 3. Write the body
 
@@ -53,7 +53,7 @@ Principles:
 
 - **Specific over general.** "Run `EXPLAIN ANALYZE` and check for sequential scans on large tables" beats "check query performance".
 - **Explain why** for non-obvious rules, so the agent can handle cases the rule did not anticipate.
-- **Short.** Aim for under ~150 lines. Put long references in separate files next to `SKILL.md` and link them.
+- **Short.** Under 200 lines (this library's CI enforces that); most good skills need about 50. Put long references in separate files next to `SKILL.md` and link them.
 - **Tool-agnostic** unless the skill is about a specific tool; mention alternatives per ecosystem.
 - **Evidence-based endings.** Require the agent to report what it verified and what it did not.
 - **Safe defaults.** Never instruct destructive actions (force-push, dropping data, deleting files) without explicit user confirmation.

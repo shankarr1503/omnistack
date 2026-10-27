@@ -1,6 +1,6 @@
 ---
 name: threat-check
-description: Security review of code or a change for exploitable vulnerabilities. Use when asked about security, before shipping auth, payments, file handling, user input, APIs or infrastructure changes, or when reviewing untrusted-input paths. Traces attacker-controlled data to dangerous sinks and reports only demonstrable issues.
+description: Security review of code or a change. Use when asked about security, or before shipping auth, payments, file handling, user input, APIs or infrastructure changes. Traces attacker-controlled data to dangerous sinks and reports only exploitable issues.
 ---
 
 # Threat check

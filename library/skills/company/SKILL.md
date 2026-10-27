@@ -1,6 +1,6 @@
 ---
 name: company
-description: Run a request through a whole AI startup - founder/CEO, board, product, CTO, design, security, CFO, engineering manager, and staff, senior and junior engineers building in parallel, then review, QA and release. Use when the user asks to build a product or feature "as a company", wants the work split across a team of agents, or invokes /omni:company (plugin) or /company.
+description: Run a request through an AI startup - CEO, board, product, CTO, design, security, CFO, an engineering manager and engineers building in parallel, then review, QA and release. Use when the user asks to build something "as a company" or with a team of agents, or runs /omni:company or /company.
 ---
 
 # Company
@@ -36,7 +36,7 @@ Every role prompt contains the founder's request, the run folder path, and the p
 
 1. Restate the request in one sentence. Read `.omni/company/charter.md` and `.omni/company/decisions.md` if they exist.
 2. Create the run folder `.omni/company/<yyyy-mm-dd>-<slug>/` with `STATUS.md` (format in `playbook.md`).
-3. Record the baseline in `STATUS.md`: `git rev-parse HEAD`, a snapshot tree id of the working tree (command in `playbook.md`), any files already modified (`git status --porcelain`), and the full test suite's result with failing tests named. If files are already modified, ask the founder to commit or stash them first; if told not to ask, list them as **the founder's files**: no ticket may own them, no role may change or commit them, and the run's changes are always measured from the baseline snapshot, so they are never reviewed or shipped as the run's work.
+3. Record the baseline in `STATUS.md`: `git rev-parse HEAD` (in a repository with no commits yet, record "no commits"; the snapshot below still works), a snapshot tree id of the working tree (command in `playbook.md`), any files already modified (`git status --porcelain`), and the full test suite's result with failing tests named. If files are already modified, ask the founder to commit or stash them first; if told not to ask, list them as **the founder's files**: no ticket may own them, no role may change or commit them, and the run's changes are always measured from the baseline snapshot, so they are never reviewed or shipped as the run's work.
 4. Honor any process preference the founder stated ("quick", "full", "don't ask me"). "Don't ask me" never covers irreversible steps (deleting data, breaking a public API, a production migration), a ticket that needs one of the founder's files, or a board escalation: for those, stop with the plan ready and ask.
 
 ## Phase 1: vision

@@ -18,10 +18,7 @@ AI agents spend tokens, and parallel agents spend them faster. You make sure the
 2. **Team size**: the most engineers that may work at the same time. Parallelism only pays when tickets are truly independent; three focused engineers usually beat eight.
 3. **Model tier per role**: strongest model for judgment (board, CEO, CTO, CSO, engineering manager, staff engineer), mid tier for well-defined work (product, design, senior engineers, QA, release), cheapest tier for fully specified junior tickets.
 4. **Budget line**: the most agent calls this run may make, including fix tickets and reviews. Spending more than that needs the board or the founder.
-5. **Stop-loss rules**: when to stop spending and escalate. Defaults (the company skill enforces the same ones):
-   - A ticket that comes back blocked or failing is re-planned once, usually one level up. If it fails again, stop and report to the founder.
-   - After two review or QA rounds on the same problem, or three rounds in total, stop and report to the founder.
-   - If agent calls pass the budget line by half, pause and report to the founder.
+5. **Stop-loss rules**: when to stop spending and escalate. The company skill's defaults always apply (one re-plan per ticket; a stop after two rounds on the same problem, three review and QA rounds in total, or calls passing the budget line by half). You may only make them stricter for this run, never looser.
 
 ## Reviewing the ticket plan
 
