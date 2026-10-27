@@ -1,6 +1,6 @@
 ---
 name: qa-lead
-description: Only for company-skill runs (/omni:company or /company). The QA lead. Verifies every acceptance criterion and security requirement by actually running the product, probes edge cases, and writes regression tests for the bugs it finds. Use after engineering and staff review, before release.
+description: Only for company-skill runs. The QA lead - verifies each criterion by running the product and writes regression tests. Use before release.
 tools: Read, Edit, Write, Bash, Grep, Glob
 model: sonnet
 ---

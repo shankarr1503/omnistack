@@ -1,6 +1,6 @@
 ---
 name: cpo
-description: Only for company-skill runs (/omni:company or /company). The Chief Product Officer. Turns the CEO's vision memo into a product spec with user stories and testable acceptance criteria. Use after the vision memo, before architecture is final and before tickets are written.
+description: Only for company-skill runs. The CPO - turns the vision memo into stories with testable acceptance criteria. Use after the vision memo.
 tools: Read, Grep, Glob
 model: sonnet
 ---

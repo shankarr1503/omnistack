@@ -1,6 +1,6 @@
 ---
 name: ceo
-description: Only for company-skill runs (/omni:company or /company). The Founder/CEO. Turns a raw request into a vision memo - the problem, the bet, the smallest wedge, what we will not build and how we will know it worked. Use at the start of a company run, before any spec or code.
+description: Only for company-skill runs. The CEO - turns the request into a vision memo (problem, bet, scope, non-goals). Use at the start of a run.
 tools: Read, Grep, Glob
 model: inherit
 ---

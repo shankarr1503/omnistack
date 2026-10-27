@@ -118,7 +118,8 @@ test('company roles are valid Claude Code subagents', async () => {
     const description = String(meta.description);
     // Plugin agents are offered in every session; scope them so they are not picked for other work.
     assert.match(description, /^Only for company-skill runs\b/, `${role}: scope to company runs`);
-    assert.ok(description.length >= 80 && description.length <= 400, `${role}: description length`);
+    // Claude Code lists every plugin agent in every session, so each extra character costs every user.
+    assert.ok(description.length >= 80 && description.length <= 160, `${role}: description length`);
     assert.match(
       description,
       /\bUse (when|for|before|after|at|as)\b/,

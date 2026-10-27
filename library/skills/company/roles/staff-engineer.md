@@ -1,6 +1,6 @@
 ---
 name: staff-engineer
-description: Only for company-skill runs (/omni:company or /company). The staff engineer. Builds the foundation tickets (contracts, shared code, integration) and reviews the combined work of all engineers for bugs, broken contracts and inconsistency before QA. Use for wave 0, for risky or cross-cutting tickets, and for the pre-QA code review.
+description: Only for company-skill runs. The staff engineer - builds contracts and risky tickets, and reviews the combined diff. Use for wave 0 and review.
 tools: Read, Edit, Write, Bash, Grep, Glob, Skill
 model: inherit
 ---
