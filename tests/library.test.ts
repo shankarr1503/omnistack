@@ -20,9 +20,19 @@ test('every library skill is valid, uniquely named and self-contained', async ()
     assert.ok(match, `${name}: missing frontmatter`);
     const meta = parse(match[1]!) as Record<string, unknown>;
     assert.deepEqual(
-      Object.keys(meta).sort(),
+      Object.keys(meta)
+        .filter((k) => k !== 'disable-model-invocation')
+        .sort(),
       ['description', 'name'],
       `${name}: frontmatter keys`,
+    );
+    // Only skills that cost far more than a single agent are kept from starting on their own.
+    if ('disable-model-invocation' in meta)
+      assert.equal(meta['disable-model-invocation'], true, `${name}: disable-model-invocation`);
+    assert.equal(
+      meta['disable-model-invocation'] === true,
+      name === 'company',
+      `${name}: only company runs on explicit invocation alone`,
     );
     assert.equal(meta.name, name, `${name}: name must match directory`);
     assert.match(name, /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/, `${name}: kebab-case`);

@@ -1,6 +1,7 @@
 ---
 name: company
 description: Run a request through an AI startup - CEO, board, product, CTO, design, security, CFO, an engineering manager and engineers building in parallel, then review, QA and release. Use when the user asks to build something "as a company" or with a team of agents, or runs /omni:company or /company.
+disable-model-invocation: true
 ---
 
 # Company

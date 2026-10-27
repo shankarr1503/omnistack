@@ -69,7 +69,7 @@ Restart your agent session after installing.
 /omni:company add tags, due dates and a stats command to the task CLI
 ```
 
-That is the plugin command. Installed with `install.sh` or by hand, use `/company ...` in Claude Code or `$company ...` in Codex, or just ask your agent to "use the company skill to ...".
+That is the plugin command. Installed with `install.sh` or by hand, use `/company ...` in Claude Code or `$company ...` in Codex. Because a company run costs many times a single agent, Claude Code never starts it on its own: you type the command. Other hosts may ignore that setting, so there you can also ask your agent to "use the company skill to ...".
 
 `company` turns Claude Code into a small startup. You are the founder; the agent becomes your chief of staff and runs the org:
 
