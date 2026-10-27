@@ -35,4 +35,4 @@ Match CI as closely as possible: same runtime version, clean install (`npm ci`, 
 
 ## 5. Verify and report
 
-Run the failing command locally after the fix and show the result. Push and confirm the CI job passes on the new commit. Report: failing job, root cause, fix, evidence.
+Run the failing command locally after the fix and show the result. Push only if the user asked you to, or approves when you ask; then confirm the CI job passes on the new commit. Without a push, say the CI result is not verified yet. Report: failing job, root cause, fix, evidence.
