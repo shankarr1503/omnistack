@@ -383,3 +383,23 @@ test('the company works as one organization', async () => {
     assert.ok(line, `${file}: the company skill must save it where it calls ${role}`);
   }
 });
+test('the library stays within its context budget', async () => {
+  // Raise a ceiling only with a reason: every token here is paid by every user, in every session
+  // (always) or on every use. Measure with `node scripts/context-cost.mjs`.
+  const script = join(root, 'scripts', 'context-cost.mjs');
+  const { contextCost } = (await import(script)) as {
+    contextCost: (root: string) => Promise<{
+      always: number;
+      skills: Record<string, number>;
+      roles: Record<string, number>;
+      playbook: number;
+    }>;
+  };
+  const cost = await contextCost(root);
+  assert.ok(cost.always <= 1650, `descriptions load ~${cost.always} tokens into every session`);
+  for (const [name, n] of Object.entries(cost.skills))
+    assert.ok(n <= (name === 'company' ? 3600 : 1250), `${name}: body is ~${n} tokens`);
+  for (const [name, n] of Object.entries(cost.roles))
+    assert.ok(n <= 1100, `${name}: brief is ~${n} tokens`);
+  assert.ok(cost.playbook <= 1600, `playbook is ~${cost.playbook} tokens`);
+});
